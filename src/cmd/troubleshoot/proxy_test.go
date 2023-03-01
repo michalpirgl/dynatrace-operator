@@ -19,9 +19,9 @@ func TestCheckProxySettings(t *testing.T) {
 		os.Setenv("HTTP_PROXY", "")
 		os.Setenv("HTTPS_PROXY", "")
 
-		troubleshootCtx := troubleshootContext{
-			context:       context.TODO(),
-			namespaceName: testNamespace,
+		troubleshootCtx := TroubleshootContext{
+			Context:   context.TODO(),
+			Namespace: testNamespace,
 		}
 
 		logOutput := runProxyTestWithTestLogger(t.Name(), func(logger logr.Logger) {
@@ -38,9 +38,9 @@ func TestCheckProxySettings(t *testing.T) {
 		os.Setenv("HTTP_PROXY", "foobar:1234")
 		os.Setenv("HTTPS_PROXY", "")
 
-		troubleshootCtx := troubleshootContext{
-			context:       context.TODO(),
-			namespaceName: testNamespace,
+		troubleshootCtx := TroubleshootContext{
+			Context:   context.TODO(),
+			Namespace: testNamespace,
 		}
 
 		logOutput := runProxyTestWithTestLogger(t.Name(), func(logger logr.Logger) {
@@ -57,9 +57,9 @@ func TestCheckProxySettings(t *testing.T) {
 		os.Setenv("HTTP_PROXY", "")
 		os.Setenv("HTTPS_PROXY", "foobar:1234")
 
-		troubleshootCtx := troubleshootContext{
-			context:       context.TODO(),
-			namespaceName: testNamespace,
+		troubleshootCtx := TroubleshootContext{
+			Context:   context.TODO(),
+			Namespace: testNamespace,
 		}
 
 		logOutput := runProxyTestWithTestLogger(t.Name(), func(logger logr.Logger) {
@@ -76,9 +76,9 @@ func TestCheckProxySettings(t *testing.T) {
 		os.Setenv("HTTP_PROXY", "")
 		os.Setenv("HTTPS_PROXY", "")
 
-		troubleshootCtx := troubleshootContext{
-			context:       context.TODO(),
-			namespaceName: testNamespace,
+		troubleshootCtx := TroubleshootContext{
+			Context:   context.TODO(),
+			Namespace: testNamespace,
 		}
 
 		troubleshootCtx.dynakube = *testNewDynakubeBuilder(testNamespace, testDynakube).
@@ -111,10 +111,10 @@ func TestCheckProxySettings(t *testing.T) {
 			).
 			Build()
 
-		troubleshootCtx := troubleshootContext{
-			context:       context.TODO(),
-			apiReader:     clt,
-			namespaceName: testNamespace,
+		troubleshootCtx := TroubleshootContext{
+			Context:   context.TODO(),
+			ApiReader: clt,
+			Namespace: testNamespace,
 		}
 
 		troubleshootCtx.dynakube = *testNewDynakubeBuilder(testNamespace, testDynakube).
@@ -135,9 +135,9 @@ func TestCheckProxySettings(t *testing.T) {
 		os.Setenv("HTTP_PROXY", "foobar:1234")
 		os.Setenv("HTTPS_PROXY", "foobar:1234")
 
-		troubleshootCtx := troubleshootContext{
-			context:       context.TODO(),
-			namespaceName: testNamespace,
+		troubleshootCtx := TroubleshootContext{
+			Context:   context.TODO(),
+			Namespace: testNamespace,
 		}
 
 		troubleshootCtx.dynakube = *testNewDynakubeBuilder(testNamespace, testDynakube).

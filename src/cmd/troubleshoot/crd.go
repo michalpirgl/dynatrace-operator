@@ -7,13 +7,13 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client"
 )
 
-func checkCRD(troubleshootCtx *troubleshootContext) error {
+func checkCRD(troubleshootCtx *TroubleshootContext) error {
 	log = newTroubleshootLogger("crd")
 
 	logNewCheckf("checking if CRD for Dynakube exists ...")
 
 	dynakubeList := &dynatracev1beta1.DynaKubeList{}
-	err := troubleshootCtx.apiReader.List(troubleshootCtx.context, dynakubeList, &client.ListOptions{Namespace: troubleshootCtx.namespaceName})
+	err := troubleshootCtx.ApiReader.List(troubleshootCtx.Context, dynakubeList, &client.ListOptions{Namespace: troubleshootCtx.Namespace})
 
 	if err != nil {
 		return determineDynakubeError(err)

@@ -6,11 +6,11 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/src/kubeobjects"
 )
 
-func checkOneAgentAPM(ctx *troubleshootContext) error {
+func checkOneAgentAPM(ctx *TroubleshootContext) error {
 	log = newTroubleshootLogger("oneAgentAPM")
 
 	logNewCheckf("checking if OneAgentAPM object exists ...")
-	exists, err := kubeobjects.CheckIfOneAgentAPMExists(&ctx.kubeConfig)
+	exists, err := kubeobjects.CheckIfOneAgentAPMExists(&ctx.KubeConfig)
 
 	if err != nil {
 		return err

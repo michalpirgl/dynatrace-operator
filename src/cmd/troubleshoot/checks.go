@@ -5,6 +5,7 @@ import (
 
 	tserrors "github.com/Dynatrace/dynatrace-operator/src/cmd/troubleshoot/errors"
 	"github.com/Dynatrace/dynatrace-operator/src/functional"
+	"github.com/go-logr/logr"
 )
 
 type Result int
@@ -15,58 +16,37 @@ const (
 	SKIPPED
 )
 
-type troubleshootFunc func(troubleshootCtx *troubleshootContext) error
+type troubleshootFunc func(troubleshootCtx *TroubleshootContext) error
 
-type Check struct {
-	Do            troubleshootFunc
-	Prerequisites []*Check
-	Name          string
+type CheckListEntry struct {
+	Check         Check
+	Prerequisites []*CheckListEntry
+
+	Do   troubleshootFunc
+	Name string
 }
 
-type ChecksResults struct {
-	checkResultMap map[*Check]Result
+type Check interface {
+	Name() string
+	Do(log logr.Logger) error
 }
 
-func NewChecksResults() ChecksResults {
-	return ChecksResults{checkResultMap: map[*Check]Result{}}
-}
-
-func (checkResults ChecksResults) set(check *Check, result Result) {
-	checkResults.checkResultMap[check] = result
-}
-
-func (checkResults ChecksResults) failedOrSkippedPrerequisites(check *Check) []*Check {
-	isFailedOrSkipped := func(check *Check) bool {
-		return checkResults.checkResultMap[check] == FAILED || checkResults.checkResultMap[check] == SKIPPED
-	}
-	return functional.Filter(check.Prerequisites, isFailedOrSkipped)
-}
-
-func (checkResults ChecksResults) hasErrors() bool {
-	for _, result := range checkResults.checkResultMap {
-		if result == FAILED {
-			return true
-		}
-	}
-	return false
-}
-
-func runChecks(results ChecksResults, troubleshootCtx *troubleshootContext, checks []*Check) error {
+func runChecks(results ChecksResults, troubleshootCtx *TroubleshootContext, checks []*CheckListEntry) error {
 	errs := tserrors.NewAggregatedError()
 
-	for _, check := range checks {
-		if shouldSkip(results, check) {
-			results.set(check, SKIPPED)
+	for _, checkListEntry := range checks {
+		if shouldSkip(results, checkListEntry) {
+			results.set(checkListEntry, SKIPPED)
 			continue
 		}
 
-		err := check.Do(troubleshootCtx)
+		err := checkListEntry.Check.Do().Do(troubleshootCtx)
 		if err != nil {
 			logErrorf(err.Error())
 			errs.Add(err)
-			results.set(check, FAILED)
+			results.set(checkListEntry, FAILED)
 		} else {
-			results.set(check, PASSED)
+			results.set(checkListEntry, PASSED)
 		}
 	}
 
@@ -77,14 +57,14 @@ func runChecks(results ChecksResults, troubleshootCtx *troubleshootContext, chec
 	return errs
 }
 
-func shouldSkip(results ChecksResults, check *Check) bool {
+func shouldSkip(results ChecksResults, check *CheckListEntry) bool {
 	failedOrSkippedPrerequisites := results.failedOrSkippedPrerequisites(check)
 
 	if len(failedOrSkippedPrerequisites) == 0 {
 		return false
 	}
 
-	getCheckName := func(check *Check) string {
+	getCheckName := func(check *CheckListEntry) string {
 		return check.Name
 	}
 	prerequisitesNames := strings.Join(functional.Map(failedOrSkippedPrerequisites, getCheckName), ",")

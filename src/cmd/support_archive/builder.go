@@ -114,6 +114,11 @@ func getLogOutput(tarballToStdout bool) io.Writer {
 func (builder CommandBuilder) runCollectors(log logr.Logger, supportArchive tarball) error {
 	context := context.Background()
 
+	kubeConfig, err := builder.configProvider.GetConfig()
+	if err != nil {
+		return err
+	}
+
 	clientSet, apiReader, err := getK8sClients(builder.configProvider)
 	if err != nil {
 		return err
@@ -123,6 +128,7 @@ func (builder CommandBuilder) runCollectors(log logr.Logger, supportArchive tarb
 		newOperatorVersionCollector(log, supportArchive),
 		newLogCollector(context, log, supportArchive, clientSet.CoreV1().Pods(namespaceFlagValue)),
 		newK8sObjectCollector(context, log, supportArchive, namespaceFlagValue, apiReader),
+		newTroubleshootCollector(context, log, supportArchive, namespaceFlagValue, apiReader, *kubeConfig),
 	}
 
 	for _, c := range collectors {

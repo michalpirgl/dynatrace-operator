@@ -86,11 +86,11 @@ func TestOneAgentImagePullable(t *testing.T) {
 	require.NoError(t, err)
 	defer dockerServer.Close()
 
-	troubleshootCtx := troubleshootContext{
-		context:       context.TODO(),
-		namespaceName: testNamespace,
-		pullSecret:    *secret,
-		httpClient:    dockerServer.Client(),
+	troubleshootCtx := TroubleshootContext{
+		Context:    context.TODO(),
+		Namespace:  testNamespace,
+		pullSecret: *secret,
+		HttpClient: dockerServer.Client(),
 	}
 
 	t.Run("OneAgent image", func(t *testing.T) {
@@ -177,11 +177,11 @@ func TestOneAgentCustomImagePullable(t *testing.T) {
 	require.NoError(t, err)
 	defer dockerServer.Close()
 
-	troubleshootCtx := troubleshootContext{
-		httpClient:    dockerServer.Client(),
-		namespaceName: testNamespace,
-		context:       context.TODO(),
-		pullSecret:    *secret,
+	troubleshootCtx := TroubleshootContext{
+		HttpClient: dockerServer.Client(),
+		Namespace:  testNamespace,
+		Context:    context.TODO(),
+		pullSecret: *secret,
 	}
 
 	t.Run("OneAgent CloudNativeFullStack unversioned custom image", func(t *testing.T) {
@@ -302,11 +302,11 @@ func TestOneAgentImageNotPullable(t *testing.T) {
 	require.NoError(t, err)
 	defer dockerServer.Close()
 
-	troubleshootCtx := troubleshootContext{
-		context:       context.TODO(),
-		namespaceName: testNamespace,
-		pullSecret:    *secret,
-		httpClient:    dockerServer.Client(),
+	troubleshootCtx := TroubleshootContext{
+		Context:    context.TODO(),
+		Namespace:  testNamespace,
+		pullSecret: *secret,
+		HttpClient: dockerServer.Client(),
 	}
 
 	t.Run("OneAgent latest image for CloudNativeFullStack not available", func(t *testing.T) {
@@ -412,11 +412,11 @@ func TestOneAgentCodeModulesImagePullable(t *testing.T) {
 	require.NoError(t, err)
 	defer dockerServer.Close()
 
-	troubleshootCtx := troubleshootContext{
-		context:       context.TODO(),
-		httpClient:    dockerServer.Client(),
-		namespaceName: testNamespace,
-		pullSecret:    *secret,
+	troubleshootCtx := TroubleshootContext{
+		Context:    context.TODO(),
+		HttpClient: dockerServer.Client(),
+		Namespace:  testNamespace,
+		pullSecret: *secret,
 	}
 
 	t.Run("OneAgent code modules image", func(t *testing.T) {
@@ -553,11 +553,11 @@ func TestActiveGateImagePullable(t *testing.T) {
 	require.NoError(t, err)
 	defer dockerServer.Close()
 
-	troubleshootCtx := troubleshootContext{
-		context:       context.TODO(),
-		httpClient:    dockerServer.Client(),
-		namespaceName: testNamespace,
-		pullSecret:    *secret,
+	troubleshootCtx := TroubleshootContext{
+		Context:    context.TODO(),
+		HttpClient: dockerServer.Client(),
+		Namespace:  testNamespace,
+		pullSecret: *secret,
 	}
 
 	t.Run("ActiveGate image", func(t *testing.T) {
@@ -617,11 +617,11 @@ func TestActiveGateImageNotPullable(t *testing.T) {
 	require.NoError(t, err)
 	defer dockerServer.Close()
 
-	troubleshootCtx := troubleshootContext{
-		context:       context.TODO(),
-		httpClient:    dockerServer.Client(),
-		namespaceName: testNamespace,
-		pullSecret:    *secret,
+	troubleshootCtx := TroubleshootContext{
+		Context:    context.TODO(),
+		HttpClient: dockerServer.Client(),
+		Namespace:  testNamespace,
+		pullSecret: *secret,
 	}
 
 	t.Run("ActiveGate image", func(t *testing.T) {
@@ -680,9 +680,9 @@ func testDockerServerHandler(method string, urls []string) http.HandlerFunc {
 
 func TestImagePullablePullSecret(t *testing.T) {
 	t.Run("valid pull secret", func(t *testing.T) {
-		troubleshootcontext := troubleshootContext{
-			namespaceName: testNamespace,
-			pullSecret:    *testNewSecretBuilder(testNamespace, testDynakube+pullSecretSuffix).dataAppend(dtpullsecret.DockerConfigJson, pullSecretFieldValue).build(),
+		troubleshootcontext := TroubleshootContext{
+			Namespace:  testNamespace,
+			pullSecret: *testNewSecretBuilder(testNamespace, testDynakube+pullSecretSuffix).dataAppend(dtpullsecret.DockerConfigJson, pullSecretFieldValue).build(),
 		}
 		secret, err := getPullSecretToken(&troubleshootcontext)
 		require.NoErrorf(t, err, "unexpected error")
@@ -690,9 +690,9 @@ func TestImagePullablePullSecret(t *testing.T) {
 	})
 
 	t.Run("invalid pull secret", func(t *testing.T) {
-		troubleshootcontext := troubleshootContext{
-			namespaceName: testNamespace,
-			pullSecret:    *testNewSecretBuilder(testNamespace, testDynakube+pullSecretSuffix).dataAppend("invalidToken", pullSecretFieldValue).build(),
+		troubleshootcontext := TroubleshootContext{
+			Namespace:  testNamespace,
+			pullSecret: *testNewSecretBuilder(testNamespace, testDynakube+pullSecretSuffix).dataAppend("invalidToken", pullSecretFieldValue).build(),
 		}
 		secret, err := getPullSecretToken(&troubleshootcontext)
 		require.Errorf(t, err, "expected error")

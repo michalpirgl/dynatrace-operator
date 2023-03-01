@@ -25,7 +25,7 @@ type Auths struct {
 	Auths Endpoints `json:"auths"`
 }
 
-func verifyAllImagesAvailable(troubleshootCtx *troubleshootContext) error {
+func verifyAllImagesAvailable(troubleshootCtx *TroubleshootContext) error {
 	log = newSubTestLogger("imagepull")
 
 	if troubleshootCtx.dynakube.NeedsOneAgent() {
@@ -38,7 +38,7 @@ func verifyAllImagesAvailable(troubleshootCtx *troubleshootContext) error {
 	return nil
 }
 
-func verifyImageIsAvailable(troubleshootCtx *troubleshootContext, comp component, proxyWarning bool) {
+func verifyImageIsAvailable(troubleshootCtx *TroubleshootContext, comp component, proxyWarning bool) {
 	image, isCustomImage := comp.getImage(&troubleshootCtx.dynakube)
 	if comp.SkipImageCheck(image) {
 		logErrorf("Unknown %s image", comp.String())
@@ -68,7 +68,7 @@ func verifyImageIsAvailable(troubleshootCtx *troubleshootContext, comp component
 	}
 }
 
-func tryImagePull(troubleshootCtx *troubleshootContext, image string) error {
+func tryImagePull(troubleshootCtx *TroubleshootContext, image string) error {
 	imageReference, err := docker.ParseReference(normalizeDockerReference(image))
 	if err != nil {
 		return err
@@ -80,7 +80,7 @@ func tryImagePull(troubleshootCtx *troubleshootContext, image string) error {
 	}
 	systemCtx.DockerInsecureSkipTLSVerify = types.OptionalBoolTrue
 
-	imageSource, err := imageReference.NewImageSource(troubleshootCtx.context, systemCtx)
+	imageSource, err := imageReference.NewImageSource(troubleshootCtx.Context, systemCtx)
 	if err != nil {
 		return err
 	}
@@ -93,8 +93,8 @@ func normalizeDockerReference(image string) string {
 	return "//" + image
 }
 
-func makeSysContext(troubleshootCtx *troubleshootContext, imageReference types.ImageReference) (*types.SystemContext, error) {
-	dockerCfg := dockerconfig.NewDockerConfig(troubleshootCtx.apiReader, troubleshootCtx.dynakube)
+func makeSysContext(troubleshootCtx *TroubleshootContext, imageReference types.ImageReference) (*types.SystemContext, error) {
+	dockerCfg := dockerconfig.NewDockerConfig(troubleshootCtx.ApiReader, troubleshootCtx.dynakube)
 	err := dockerCfg.SetupAuthsFromSecret(&troubleshootCtx.pullSecret)
 	if err != nil {
 		return nil, err
@@ -102,7 +102,7 @@ func makeSysContext(troubleshootCtx *troubleshootContext, imageReference types.I
 	return dockerconfig.MakeSystemContext(imageReference.DockerReference(), dockerCfg), nil
 }
 
-func getPullSecretToken(troubleshootCtx *troubleshootContext) (string, error) {
+func getPullSecretToken(troubleshootCtx *TroubleshootContext) (string, error) {
 	secretBytes, hasPullSecret := troubleshootCtx.pullSecret.Data[dtpullsecret.DockerConfigJson]
 	if !hasPullSecret {
 		return "", fmt.Errorf("token .dockerconfigjson does not exist in secret '%s'", troubleshootCtx.pullSecret.Name)

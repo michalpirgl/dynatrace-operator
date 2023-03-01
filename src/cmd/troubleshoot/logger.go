@@ -68,27 +68,27 @@ func newSubTestLogger(testName string) logr.Logger {
 	return newSubTestLoggerToWriter(testName, os.Stdout)
 }
 
-func logNewCheckf(format string, v ...interface{}) {
+func logNewCheckf(log logr.Logger, format string, v ...interface{}) {
 	log.V(levelNewCheck).Info(fmt.Sprintf(format, v...))
 }
 
-func logNewDynakubef(format string, v ...interface{}) {
+func logNewDynakubef(log logr.Logger, format string, v ...interface{}) {
 	log.V(levelNewDynakube).Info(fmt.Sprintf(format, v...))
 }
 
-func logInfof(format string, v ...interface{}) {
+func logInfof(log logr.Logger, format string, v ...interface{}) {
 	log.Info(fmt.Sprintf(format, v...))
 }
 
-func logOkf(format string, v ...interface{}) {
+func logOkf(log logr.Logger, format string, v ...interface{}) {
 	log.V(levelSuccess).Info(fmt.Sprintf(format, v...))
 }
 
-func logWarningf(format string, v ...interface{}) {
+func logWarningf(log logr.Logger, format string, v ...interface{}) {
 	log.V(levelWarning).Info(fmt.Sprintf(format, v...))
 }
 
-func logErrorf(format string, v ...interface{}) {
+func logErrorf(log logr.Logger, format string, v ...interface{}) {
 	log.V(levelError).Info(fmt.Sprintf(format, v...))
 }
 

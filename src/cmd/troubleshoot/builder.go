@@ -106,44 +106,42 @@ func (builder CommandBuilder) buildRun() func(*cobra.Command, []string) error {
 
 		apiReader := k8scluster.GetAPIReader()
 
-		troubleshootCtx := troubleshootContext{
-			context:       context.Background(),
-			apiReader:     apiReader,
-			httpClient:    &http.Client{},
-			namespaceName: namespaceFlagValue,
-			kubeConfig:    *kubeConfig,
+		ctx := context.Background()
+		troubleshootCtx := TroubleshootContext{
+			Context:    ctx,
+			ApiReader:  apiReader,
+			HttpClient: &http.Client{},
+			Namespace:  namespaceFlagValue,
+			KubeConfig: *kubeConfig,
 		}
 
 		results := NewChecksResults()
-		err = runChecks(results, &troubleshootCtx, getPrerequisiteChecks()) // ignore error to avoid polluting pretty logs
+		err = runChecks(results, &troubleshootCtx, getPrerequisiteChecks(ctx, nil, namespaceFlagValue, apiReader)) // ignore error to avoid polluting pretty logs
 		resetLogger()
 		if err != nil {
 			logErrorf("prerequisite checks failed, aborting")
-			return nil //nolint:nilerr
+			return err
 		}
 
-		dynakubes, err := getDynakubes(troubleshootCtx, dynakubeFlagValue)
+		dynakubes, err := getDynakubes(context.Background(), apiReader, namespaceFlagValue, dynakubeFlagValue)
 		if err != nil {
-			return nil //nolint:nilerr
+			return err
 		}
-
 		runChecksForAllDynakubes(results, getDynakubeSpecificChecks(results), dynakubes, apiReader)
-
-		return nil
 	}
 }
 
-func runChecksForAllDynakubes(results ChecksResults, checks []*Check, dynakubes []dynatracev1beta1.DynaKube, apiReader client.Reader) {
+func runChecksForAllDynakubes(results ChecksResults, checks []*CheckListEntry, dynakubes []dynatracev1beta1.DynaKube, apiReader client.Reader) {
 	for _, dynakube := range dynakubes {
-		results.checkResultMap = map[*Check]Result{}
+		results.checkResultMap = map[*CheckListEntry]Result{}
 		logNewDynakubef(dynakube.Name)
 
-		troubleshootCtx := troubleshootContext{
-			context:       context.Background(),
-			apiReader:     apiReader,
-			httpClient:    &http.Client{},
-			namespaceName: namespaceFlagValue,
-			dynakube:      dynakube,
+		troubleshootCtx := TroubleshootContext{
+			Context:    context.Background(),
+			ApiReader:  apiReader,
+			HttpClient: &http.Client{},
+			Namespace:  namespaceFlagValue,
+			dynakube:   dynakube,
 		}
 
 		_ = runChecks(results, &troubleshootCtx, checks) // ignore error to avoid polluting pretty logs
@@ -154,49 +152,51 @@ func runChecksForAllDynakubes(results ChecksResults, checks []*Check, dynakubes 
 	}
 }
 
-func getPrerequisiteChecks() []*Check {
-	namespaceCheck := &Check{
-		Name: namespaceCheckName,
-		Do:   checkNamespace,
-	}
-	crdCheck := &Check{
-		Name: crdCheckName,
-		Do:   checkCRD,
-	}
-	oneAgentAPMCheck := &Check{
-		Name: oneAgentAPMCheckName,
-		Do:   checkOneAgentAPM,
-	}
-	return []*Check{namespaceCheck, crdCheck, oneAgentAPMCheck}
-}
-
-func getDynakubeSpecificChecks(results ChecksResults) []*Check {
-	dynakubeCheck := &Check{
-		Name: dynakubeCheckName,
-		Do: func(troubleshootCtx *troubleshootContext) error {
-			return checkDynakube(results, troubleshootCtx)
+func getPrerequisiteChecks(ctx context.Context, namespace string, apiReader client.Reader) []*CheckListEntry {
+	return []*CheckListEntry{
+		{
+			Check: newNamespaceCheck(ctx, namespace, apiReader),
+		},
+		{
+			Name: crdCheckName,
+			Do:   checkCRD,
+		},
+		{
+			Name: oneAgentAPMCheckName,
+			Do:   checkOneAgentAPM,
 		},
 	}
-	imagePullableCheck := &Check{
-		Name:          imagePullableCheckName,
-		Do:            verifyAllImagesAvailable,
-		Prerequisites: []*Check{dynakubeCheck},
-	}
-	proxySettingsCheck := &Check{
-		Name:          proxySettingsCheckName,
-		Do:            checkProxySettings,
-		Prerequisites: []*Check{dynakubeCheck},
-	}
-	return []*Check{dynakubeCheck, imagePullableCheck, proxySettingsCheck}
 }
 
-func getDynakubes(troubleshootCtx troubleshootContext, dynakubeName string) ([]dynatracev1beta1.DynaKube, error) {
+func getDynakubeSpecificChecks(results ChecksResults) []*CheckListEntry {
+	checkList := map[string]*CheckListEntry{
+		dynakubeCheckName: {
+			Do: func(troubleshootCtx *TroubleshootContext) error {
+				return checkDynakube(results, troubleshootCtx)
+			},
+		},
+		imagePullableCheckName: {
+			Do: verifyAllImagesAvailable,
+		},
+		proxySettingsCheckName: {
+			Do: checkProxySettings,
+		},
+	}
+
+	checkList[imagePullableCheckName].Prerequisites = []*CheckListEntry{checkList[dynakubeCheckName]}
+	checkList[proxySettingsCheckName].Prerequisites = []*CheckListEntry{checkList[dynakubeCheckName]}
+
+	// TODO: return map, entries do not carry their names currently
+	return []*CheckListEntry{checkList[dynakubeCheckName], checkList[imagePullableCheckName], checkList[proxySettingsCheckName]}
+}
+
+func getDynakubes(ctx context.Context, apiReader client.Reader, namespace string, dynakubeName string) ([]dynatracev1beta1.DynaKube, error) {
 	var err error
 	var dynakubes []dynatracev1beta1.DynaKube
 
 	if dynakubeName == "" {
-		logNewDynakubef("no Dynakube specified - checking all Dynakubes in namespace '%s'", troubleshootCtx.namespaceName)
-		dynakubes, err = getAllDynakubesInNamespace(troubleshootCtx)
+		logNewDynakubef("no Dynakube specified - checking all Dynakubes in namespace '%s'", namespace)
+		dynakubes, err = getAllDynakubesInNamespace(ctx, apiReader, namespace)
 		if err != nil {
 			return nil, err
 		}
@@ -209,8 +209,8 @@ func getDynakubes(troubleshootCtx troubleshootContext, dynakubeName string) ([]d
 	return dynakubes, nil
 }
 
-func getAllDynakubesInNamespace(troubleshootContext troubleshootContext) ([]dynatracev1beta1.DynaKube, error) {
-	query := kubeobjects.NewDynakubeQuery(troubleshootContext.apiReader, troubleshootContext.namespaceName).WithContext(troubleshootContext.context)
+func getAllDynakubesInNamespace(ctx context.Context, apiReader client.Reader, namespace string) ([]dynatracev1beta1.DynaKube, error) {
+	query := kubeobjects.NewDynakubeQuery(apiReader, namespace).WithContext(ctx)
 	dynakubes, err := query.List()
 
 	if err != nil {
@@ -219,7 +219,7 @@ func getAllDynakubesInNamespace(troubleshootContext troubleshootContext) ([]dyna
 	}
 
 	if len(dynakubes.Items) == 0 {
-		err = fmt.Errorf("no Dynakubes found in namespace '%s'", troubleshootContext.namespaceName)
+		err = fmt.Errorf("no Dynakubes found in namespace '%s'", namespace)
 		logErrorf(err.Error())
 		return nil, err
 	}

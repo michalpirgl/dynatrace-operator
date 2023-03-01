@@ -29,8 +29,8 @@ func TestTroubleshootNamespace(t *testing.T) {
 			}).
 			Build()
 
-		troubleshootCtx := troubleshootContext{apiReader: clt, namespaceName: testNamespace}
-		assert.NoErrorf(t, checkNamespace(&troubleshootCtx), "'%s' namespace not found", troubleshootCtx.namespaceName)
+		troubleshootCtx := TroubleshootContext{ApiReader: clt, Namespace: testNamespace}
+		assert.NoErrorf(t, checkNamespace(&troubleshootCtx), "'%s' namespace not found", troubleshootCtx.Namespace)
 	})
 	t.Run("namespace does not exist in cluster", func(t *testing.T) {
 		clt := fake.NewClientBuilder().
@@ -43,8 +43,8 @@ func TestTroubleshootNamespace(t *testing.T) {
 			}).
 			Build()
 
-		troubleshootCtx := troubleshootContext{apiReader: clt, namespaceName: testNamespace}
-		assert.Errorf(t, checkNamespace(&troubleshootCtx), "'%s' namespace found", troubleshootCtx.namespaceName)
+		troubleshootCtx := TroubleshootContext{ApiReader: clt, Namespace: testNamespace}
+		assert.Errorf(t, checkNamespace(&troubleshootCtx), "'%s' namespace found", troubleshootCtx.Namespace)
 	})
 	t.Run("invalid namespace selected", func(t *testing.T) {
 		clt := fake.NewClientBuilder().
@@ -57,7 +57,7 @@ func TestTroubleshootNamespace(t *testing.T) {
 			}).
 			Build()
 
-		troubleshootCtx := troubleshootContext{apiReader: clt, namespaceName: testOtherNamespace}
-		assert.Errorf(t, checkNamespace(&troubleshootCtx), "'%s' namespace found", troubleshootCtx.namespaceName)
+		troubleshootCtx := TroubleshootContext{ApiReader: clt, Namespace: testOtherNamespace}
+		assert.Errorf(t, checkNamespace(&troubleshootCtx), "'%s' namespace found", troubleshootCtx.Namespace)
 	})
 }

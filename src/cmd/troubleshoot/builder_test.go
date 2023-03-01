@@ -23,7 +23,7 @@ func TestTroubleshootCommandBuilder(t *testing.T) {
 		dynakube := buildTestDynakube()
 		clt := fake.NewClient(&dynakube)
 
-		troubleshootCtx := troubleshootContext{apiReader: clt, namespaceName: testNamespace}
+		troubleshootCtx := TroubleshootContext{ApiReader: clt, Namespace: testNamespace}
 
 		dynakubes, err := getAllDynakubesInNamespace(troubleshootCtx)
 		assert.NoError(t, err)
@@ -33,9 +33,9 @@ func TestTroubleshootCommandBuilder(t *testing.T) {
 
 	t.Run("getDynakube - only check one dynakube if set", func(t *testing.T) {
 		dynakube := buildTestDynakube()
-		troubleshootCtx := troubleshootContext{
-			dynakube:      dynakube,
-			namespaceName: testNamespace,
+		troubleshootCtx := TroubleshootContext{
+			dynakube:  dynakube,
+			Namespace: testNamespace,
 		}
 
 		dynakubes, err := getDynakubes(troubleshootCtx, dynakube.Name)

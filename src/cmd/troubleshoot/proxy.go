@@ -9,11 +9,11 @@ import (
 	"k8s.io/apimachinery/pkg/types"
 )
 
-func checkProxySettings(troubleshootCtx *troubleshootContext) error {
+func checkProxySettings(troubleshootCtx *TroubleshootContext) error {
 	return checkProxySettingsWithLog(troubleshootCtx, newSubTestLogger("proxy"))
 }
 
-func checkProxySettingsWithLog(troubleshootCtx *troubleshootContext, logger logr.Logger) error {
+func checkProxySettingsWithLog(troubleshootCtx *TroubleshootContext, logger logr.Logger) error {
 	log = logger
 
 	var proxyURL string
@@ -77,7 +77,7 @@ func getEnvProxySettings() *httpproxy.Config {
 	return nil
 }
 
-func applyProxySettings(troubleshootCtx *troubleshootContext) error {
+func applyProxySettings(troubleshootCtx *TroubleshootContext) error {
 	proxyURL, err := getProxyURL(troubleshootCtx)
 	if err != nil {
 		return err
@@ -93,7 +93,7 @@ func applyProxySettings(troubleshootCtx *troubleshootContext) error {
 	return nil
 }
 
-func getProxyURL(troubleshootCtx *troubleshootContext) (string, error) {
+func getProxyURL(troubleshootCtx *TroubleshootContext) (string, error) {
 	if troubleshootCtx.dynakube.Spec.Proxy == nil {
 		return "", nil
 	}
@@ -117,23 +117,23 @@ func getProxyURL(troubleshootCtx *troubleshootContext) (string, error) {
 	return "", nil
 }
 
-func setProxySecret(troubleshootCtx *troubleshootContext) error {
+func setProxySecret(troubleshootCtx *TroubleshootContext) error {
 	if troubleshootCtx.proxySecret != nil {
 		return nil
 	}
 
-	query := kubeobjects.NewSecretQuery(troubleshootCtx.context, nil, troubleshootCtx.apiReader, log)
+	query := kubeobjects.NewSecretQuery(troubleshootCtx.Context, nil, troubleshootCtx.ApiReader, log)
 	secret, err := query.Get(types.NamespacedName{
-		Namespace: troubleshootCtx.namespaceName,
+		Namespace: troubleshootCtx.Namespace,
 		Name:      troubleshootCtx.dynakube.Spec.Proxy.ValueFrom})
 
 	if err != nil {
 		return errors.Wrapf(err, "'%s:%s' proxy secret is missing",
-			troubleshootCtx.namespaceName, troubleshootCtx.dynakube.Spec.Proxy.ValueFrom)
+			troubleshootCtx.Namespace, troubleshootCtx.dynakube.Spec.Proxy.ValueFrom)
 	}
 
 	troubleshootCtx.proxySecret = &secret
 	logInfof("proxy secret '%s:%s' exists",
-		troubleshootCtx.namespaceName, troubleshootCtx.dynakube.Spec.Proxy.ValueFrom)
+		troubleshootCtx.Namespace, troubleshootCtx.dynakube.Spec.Proxy.ValueFrom)
 	return nil
 }
