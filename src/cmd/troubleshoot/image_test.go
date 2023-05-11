@@ -8,9 +8,13 @@ import (
 	"net/url"
 	"strings"
 	"testing"
+	_ "unsafe"
 
 	"github.com/Dynatrace/dynatrace-operator/src/api/v1beta1"
 	"github.com/Dynatrace/dynatrace-operator/src/controllers/dynakube/dtpullsecret"
+	"github.com/Dynatrace/dynatrace-operator/src/dockerconfig"
+	"github.com/containers/image/v5/docker"
+	"github.com/containers/image/v5/types"
 	"github.com/go-logr/logr"
 	"github.com/spf13/afero"
 	"github.com/stretchr/testify/assert"
@@ -470,4 +474,50 @@ func TestImagePullablePullSecret(t *testing.T) {
 
 func resetFileSystem(troubleshootCtx *troubleshootContext) {
 	troubleshootCtx.fs = afero.Afero{Fs: afero.NewMemMapFs()}
+}
+
+//go:linkname resetCachedProxies net/http.resetProxyConfig
+func resetCachedProxies()
+
+func TestXXX(t *testing.T) {
+	dockerServer, secret, _, err := setupDockerMocker(
+		[]string{
+			"/v2/",
+			"/v2/" + testOneAgentImage + "/manifests/" + "latest",
+		})
+	require.NoError(t, err)
+	defer dockerServer.Close()
+
+	troubleshootCtx := troubleshootContext{
+		context:       context.TODO(),
+		httpClient:    dockerServer.Client(),
+		namespaceName: testNamespace,
+		pullSecret:    *secret,
+		dynakube:      *dynakubeBuilder(dockerServer.URL).withCloudNativeFullStack().build(),
+	}
+	resetFileSystem(&troubleshootCtx)
+
+	//127.0.0.1:40547/linux/oneagent:latest
+	image := troubleshootCtx.dynakube.ApiUrlHost() + "/" + testOneAgentImage + ":latest"
+	imageReference, err := docker.ParseReference(
+		normalizeDockerReference(image))
+
+	require.NoError(t, err)
+
+	dockerCfg := dockerconfig.NewDockerConfig(troubleshootCtx.apiReader, troubleshootCtx.dynakube)
+	defer func(dockerCfg *dockerconfig.DockerConfig, fs afero.Afero) {
+		_ = dockerCfg.Cleanup(fs)
+	}(dockerCfg, troubleshootCtx.fs)
+
+	systemCtx, err := makeSysContext(&troubleshootCtx, imageReference, dockerCfg)
+	require.NoError(t, err)
+
+	systemCtx.DockerInsecureSkipTLSVerify = types.OptionalBoolTrue
+
+	imageSource, err := imageReference.NewImageSource(troubleshootCtx.context, systemCtx)
+	require.NoError(t, err)
+
+	err = injectProxyToImageSource(&troubleshootCtx, imageSource)
+	require.NoError(t, err)
+	_ = imageSource.Close()
 }
