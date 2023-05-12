@@ -47,6 +47,6 @@ func (t troubleshootCollector) Do() error {
 
 	troubleshoot.RunTroubleshootCmd(context.Background(), log, t.apiReader, t.namespace, t.kubeConfig)
 
-	t.supportArchive.addFile(TroublshootOutputFileName, &troubleshootCmdOutput)
+	t.supportArchive.addFileTmpIntermediate(TroublshootOutputFileName, &troubleshootCmdOutput)
 	return nil
 }

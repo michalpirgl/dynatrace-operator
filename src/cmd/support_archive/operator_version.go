@@ -33,7 +33,7 @@ func (vc operatorVersionCollector) Do() error {
 		version.BuildDate,
 		runtime.Version(),
 		runtime.GOOS, runtime.GOARCH)
-	vc.supportArchive.addFile(OperatorVersionFileName, strings.NewReader(versionString))
+	vc.supportArchive.addFileTmpIntermediate(OperatorVersionFileName, strings.NewReader(versionString))
 
 	return nil
 }

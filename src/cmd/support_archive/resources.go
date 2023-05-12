@@ -73,7 +73,7 @@ func (collector k8sResourceCollector) storeObject(resource unstructured.Unstruct
 	}
 	fileName := collector.createFileName(resource.GetKind(), resource)
 
-	err = collector.supportArchive.addFile(fileName, bytes.NewBuffer(yamlManifest))
+	err = collector.supportArchive.addFileTmpIntermediate(fileName, bytes.NewBuffer(yamlManifest))
 	if err != nil {
 		logErrorf(collector.log, err, "Failed to add %s to support archive", fileName)
 		return

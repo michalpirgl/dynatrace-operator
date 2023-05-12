@@ -110,7 +110,7 @@ func (collector logCollector) collectContainerLogs(pod *corev1.Pod, container co
 	defer podLogs.Close()
 
 	fileName := buildLogFileName(pod, container, logOptions)
-	err = collector.supportArchive.addFile(fileName, podLogs)
+	err = collector.supportArchive.addFileInParts(fileName, podLogs)
 
 	if err != nil {
 		logErrorf(collector.log, err, "error writing to tarball")

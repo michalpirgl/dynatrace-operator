@@ -24,7 +24,7 @@ func TestAddFile(t *testing.T) {
 	fileName := tarFile.Name()
 
 	testString := []byte(`Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua.`)
-	require.NoError(t, tarball.addFile("lorem-ipsum.txt", bytes.NewReader(testString)))
+	require.NoError(t, tarball.addFileTmpIntermediate("lorem-ipsum.txt", bytes.NewReader(testString)))
 	tarball.close()
 	tarFile.Close()
 

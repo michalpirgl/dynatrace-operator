@@ -3,6 +3,7 @@ package support_archive
 import (
 	"archive/tar"
 	"bytes"
+	"compress/gzip"
 	"context"
 	"io"
 	"testing"
@@ -43,17 +44,18 @@ func TestLogCollector(t *testing.T) {
 	logBuffer := bytes.Buffer{}
 
 	tarBuffer := bytes.Buffer{}
-	supportArchive := tarball{
-		tarWriter: tar.NewWriter(&tarBuffer),
-	}
+	supportArchive := newTarball(&tarBuffer)
 
 	logCollector := newLogCollector(context.TODO(), newSupportArchiveLogger(&logBuffer), supportArchive, fakeClientSet.CoreV1().Pods("dynatrace"))
 
 	require.NoError(t, logCollector.Do())
 
-	supportArchive.tarWriter.Close()
+	supportArchive.close()
 
-	tarReader := tar.NewReader(&tarBuffer)
+	zipReader, err := gzip.NewReader(&tarBuffer)
+	require.NoError(t, err)
+	tarReader := tar.NewReader(zipReader)
+
 	tarHeader, err := tarReader.Next()
 	require.NoError(t, err)
 	assert.Equal(t, "logs/pod1/container1.log", tarHeader.Name)
@@ -218,9 +220,7 @@ func TestLogCollectorNoAbortOnError(t *testing.T) {
 	logBuffer := bytes.Buffer{}
 
 	tarBuffer := bytes.Buffer{}
-	supportArchive := tarball{
-		tarWriter: tar.NewWriter(&tarBuffer),
-	}
+	supportArchive := newTarball(&tarBuffer)
 	defer supportArchive.tarWriter.Close()
 
 	mockedPods := corev1mocks.NewPodInterface(t)
@@ -260,9 +260,11 @@ func TestLogCollectorNoAbortOnError(t *testing.T) {
 	logCollector := newLogCollector(context, newSupportArchiveLogger(&logBuffer), supportArchive, mockedPods)
 	require.NoError(t, logCollector.Do())
 
-	supportArchive.tarWriter.Close()
+	supportArchive.close()
 
-	tarReader := tar.NewReader(&tarBuffer)
+	zipReader, err := gzip.NewReader(&tarBuffer)
+	require.NoError(t, err)
+	tarReader := tar.NewReader(zipReader)
 
 	tarHeader, err := tarReader.Next()
 	require.NoError(t, err)
