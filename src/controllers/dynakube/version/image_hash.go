@@ -6,6 +6,7 @@ import (
 
 	"github.com/Dynatrace/dynatrace-operator/src/api/v1beta1"
 	"github.com/Dynatrace/dynatrace-operator/src/dockerconfig"
+	imageproxy "github.com/Dynatrace/dynatrace-operator/src/image"
 	"github.com/containers/image/v5/image"
 	"github.com/containers/image/v5/manifest"
 	"github.com/containers/image/v5/transports/alltransports"
@@ -38,7 +39,8 @@ func GetImageVersion(ctx context.Context, imageName string, dockerConfig *docker
 		if err != nil {
 			return ImageVersion{}, errors.WithStack(err)
 		}
-		restoreProxy := OverrideProxyInEnvironment(proxy)
+
+		restoreProxy := imageproxy.ReconfigureProxyFromEnvironment(imageproxy.SimpleProxyConfig(proxy))
 		defer restoreProxy()
 	}
 

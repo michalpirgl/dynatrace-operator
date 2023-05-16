@@ -8,6 +8,7 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/src/controllers/csi/metadata"
 	"github.com/Dynatrace/dynatrace-operator/src/dockerconfig"
 	"github.com/Dynatrace/dynatrace-operator/src/dtclient"
+	imageproxy "github.com/Dynatrace/dynatrace-operator/src/image"
 	"github.com/Dynatrace/dynatrace-operator/src/installer"
 	"github.com/Dynatrace/dynatrace-operator/src/installer/image"
 	"github.com/Dynatrace/dynatrace-operator/src/installer/url"
@@ -103,11 +104,23 @@ func newImageInstaller(ctx context.Context, fs afero.Fs, apiReader client.Reader
 		return nil, err
 	}
 
+	var proxyConfig *imageproxy.ProxyConfig = nil
+
+	if dynakube.HasProxy() {
+		proxy, err := dynakube.Proxy(ctx, apiReader)
+		if err != nil {
+			return nil, err
+		}
+		proxyConfig = imageproxy.SimpleProxyConfig(proxy)
+	}
+
 	return image.NewImageInstaller(fs, &image.Properties{
 		ImageUri:     dynakube.CodeModulesImage(),
 		PathResolver: pathResolver,
 		Metadata:     db,
-		DockerConfig: *dockerConfig})
+		DockerConfig: *dockerConfig,
+		Proxy:        proxyConfig,
+	})
 }
 
 func (updater *agentUpdater) updateAgent(latestProcessModuleConfigCache *processModuleConfigCache) (string, error) {

@@ -2,7 +2,6 @@ package troubleshoot
 
 import (
 	"fmt"
-	"os"
 	_ "unsafe"
 
 	"github.com/Dynatrace/dynatrace-operator/src/controllers/dynakube/dtpullsecret"
@@ -11,7 +10,6 @@ import (
 	"github.com/containers/image/v5/types"
 	"github.com/go-logr/logr"
 	"github.com/spf13/afero"
-	"golang.org/x/net/http/httpproxy"
 )
 
 const (
@@ -100,25 +98,6 @@ func tryImagePull(troubleshootCtx *troubleshootContext, image string) error {
 
 	_ = imageSource.Close()
 	return nil
-}
-
-//go:linkname resetCachedProxies net/http.resetProxyConfig
-func resetCachedProxies()
-
-func rewireProxy(proxy string) func() {
-	oldConfig := httpproxy.FromEnvironment()
-	oldRequestMethod := os.Getenv("REQUEST_METHOD")
-
-	os.Setenv("HTTP_PROXY", proxy)
-	os.Setenv("HTTPS_PROXY", proxy)
-	resetCachedProxies()
-
-	return func() {
-		os.Setenv("HTTP_PROXY", oldConfig.HTTPProxy)
-		os.Setenv("HTTPS_PROXY", oldConfig.HTTPSProxy)
-		os.Setenv("NO_PROXY", oldConfig.NoProxy)
-		os.Setenv("REQUEST_METHOD", oldRequestMethod)
-	}
 }
 
 //func IsValueOk(val reflect.Value, expectedType string, expectedKind reflect.Kind) (reflect.Value, error) {

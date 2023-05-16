@@ -7,6 +7,7 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/src/controllers/csi/metadata"
 	"github.com/Dynatrace/dynatrace-operator/src/dockerconfig"
 	dtypes "github.com/Dynatrace/dynatrace-operator/src/dtclient"
+	imageproxy "github.com/Dynatrace/dynatrace-operator/src/image"
 	"github.com/Dynatrace/dynatrace-operator/src/installer/common"
 	"github.com/Dynatrace/dynatrace-operator/src/installer/symlink"
 	"github.com/Dynatrace/dynatrace-operator/src/installer/zip"
@@ -21,6 +22,7 @@ type Properties struct {
 	DockerConfig dockerconfig.DockerConfig
 	PathResolver metadata.PathResolver
 	Metadata     metadata.Access
+	Proxy        *imageproxy.ProxyConfig
 }
 
 func NewImageInstaller(fs afero.Fs, props *Properties) (*Installer, error) {
@@ -46,6 +48,7 @@ type Installer struct {
 	props     *Properties
 
 	imageDigest string
+	proxy       string
 }
 
 func (installer Installer) ImageDigest() string {
@@ -54,6 +57,12 @@ func (installer Installer) ImageDigest() string {
 
 func (installer *Installer) InstallAgent(targetDir string) (bool, error) {
 	log.Info("installing agent from image")
+
+	if installer.props.Proxy != nil {
+		log.Info("using proxy", "proxyConfig", installer.props.Proxy)
+		restoreProxy := imageproxy.ReconfigureProxyFromEnvironment(*installer.props.Proxy)
+		defer restoreProxy()
+	}
 
 	err := installer.fs.MkdirAll(installer.props.PathResolver.AgentSharedBinaryDirBase(), common.MkDirFileMode)
 	if err != nil {
@@ -87,6 +96,7 @@ func (installer Installer) Cleanup() error {
 }
 
 func (installer *Installer) installAgentFromImage() error {
+
 	defer installer.fs.RemoveAll(CacheDir)
 	err := installer.fs.MkdirAll(CacheDir, common.MkDirFileMode)
 	if err != nil {
