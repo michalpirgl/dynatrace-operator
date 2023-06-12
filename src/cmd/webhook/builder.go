@@ -18,6 +18,7 @@ import (
 	"github.com/pkg/errors"
 	"github.com/spf13/cobra"
 	ctrl "sigs.k8s.io/controller-runtime"
+	"sigs.k8s.io/controller-runtime/pkg/healthz"
 )
 
 const (
@@ -102,6 +103,17 @@ func (builder CommandBuilder) buildRun() func(*cobra.Command, []string) error {
 		if err != nil {
 			return err
 		}
+
+		err = webhookManager.AddHealthzCheck("livez", healthz.Ping)
+		if err != nil {
+			return errors.WithStack(err)
+		}
+
+		err = webhookManager.AddReadyzCheck("readyz", healthz.Ping)
+		if err != nil {
+			return errors.WithStack(err)
+		}
+
 		webhookPod, err := kubeobjects.GetPod(context.TODO(), webhookManager.GetAPIReader(), builder.podName, builder.namespace)
 		if err != nil {
 			return err

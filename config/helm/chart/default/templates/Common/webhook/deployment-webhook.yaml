@@ -105,12 +105,23 @@ spec:
                   fieldPath: metadata.name
           readinessProbe:
             httpGet:
+              path: /readyz
+              port: health-port
+              scheme: HTTP
+            initialDelaySeconds: 15
+            periodSeconds: 10
+          livenessProbe:
+            httpGet:
               path: /livez
-              port: server-port
-              scheme: HTTPS
+              port: health-port
+              scheme: HTTP
+            initialDelaySeconds: 15
+            periodSeconds: 10
           ports:
             - name: server-port
               containerPort: 8443
+            - name: health-port
+              containerPort: 10080
           resources:
             requests:
               {{- toYaml (.Values.webhook).requests | nindent 14 }}

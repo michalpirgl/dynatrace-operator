@@ -21,7 +21,6 @@ import (
 const (
 	metricsBindAddress     = ":8080"
 	healthProbeBindAddress = ":10080"
-	operatorManagerPort    = 8383
 
 	leaderElectionId                  = "dynatrace-operator-lock"
 	leaderElectionResourceLock        = "leases"
@@ -30,7 +29,6 @@ const (
 	leaderElectionEnvVarLeaseDuration = "LEADER_ELECTION_LEASE_DURATION"
 
 	livenessEndpointName = "/livez"
-	readyzEndpointName   = "readyz"
 	livezEndpointName    = "livez"
 )
 
@@ -59,11 +57,6 @@ func (provider bootstrapManagerProvider) CreateManager(namespace string, config 
 		return nil, errors.WithStack(err)
 	}
 
-	err = controlManager.AddReadyzCheck(readyzEndpointName, healthz.Ping)
-	if err != nil {
-		return nil, errors.WithStack(err)
-	}
-
 	return controlManager, errors.WithStack(err)
 }
 
@@ -86,11 +79,6 @@ func (provider operatorManagerProvider) CreateManager(namespace string, cfg *res
 	}
 
 	err = mgr.AddHealthzCheck(livezEndpointName, healthz.Ping)
-	if err != nil {
-		return nil, errors.WithStack(err)
-	}
-
-	err = mgr.AddReadyzCheck(readyzEndpointName, healthz.Ping)
 	if err != nil {
 		return nil, errors.WithStack(err)
 	}
@@ -125,7 +113,6 @@ func (provider operatorManagerProvider) createOptions(namespace string) ctrl.Opt
 		Namespace:                  namespace,
 		Scheme:                     scheme.Scheme,
 		MetricsBindAddress:         metricsBindAddress,
-		Port:                       operatorManagerPort,
 		LeaderElection:             true,
 		LeaderElectionID:           leaderElectionId,
 		LeaderElectionResourceLock: leaderElectionResourceLock,

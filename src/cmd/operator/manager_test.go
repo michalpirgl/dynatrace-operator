@@ -28,7 +28,6 @@ func TestOperatorManagerProvider(t *testing.T) {
 		assert.Equal(t, "namespace", options.Namespace)
 		assert.Equal(t, scheme.Scheme, options.Scheme)
 		assert.Equal(t, metricsBindAddress, options.MetricsBindAddress)
-		assert.Equal(t, operatorManagerPort, options.Port)
 		assert.True(t, options.LeaderElection)
 		assert.Equal(t, leaderElectionId, options.LeaderElectionID)
 		assert.Equal(t, leaderElectionResourceLock, options.LeaderElectionResourceLock)
@@ -63,12 +62,10 @@ func TestBootstrapManagerProvider(t *testing.T) {
 
 func testHealthzAndReadyz(t *testing.T, createProviderAndRunManager func(mockMgr *cmdManager.MockManager) error) {
 	const addHealthzCheckMethodName = "AddHealthzCheck"
-	const addReadyzCheckMethodName = "AddReadyzCheck"
 	const checkerArgumentType = "healthz.Checker"
 
 	mockMgr := &cmdManager.MockManager{}
 	mockMgr.On(addHealthzCheckMethodName, livezEndpointName, mock.AnythingOfType(checkerArgumentType)).Return(nil)
-	mockMgr.On(addReadyzCheckMethodName, readyzEndpointName, mock.AnythingOfType(checkerArgumentType)).Return(nil)
 
 	client := fake.NewClient(&corev1.Namespace{ObjectMeta: metav1.ObjectMeta{Name: "kube-system"}})
 	mockMgr.On("GetConfig").Return(&rest.Config{})
@@ -80,7 +77,6 @@ func testHealthzAndReadyz(t *testing.T, createProviderAndRunManager func(mockMgr
 
 	assert.NoError(t, err)
 	mockMgr.AssertCalled(t, addHealthzCheckMethodName, livezEndpointName, mock.AnythingOfType(checkerArgumentType))
-	mockMgr.AssertCalled(t, addReadyzCheckMethodName, readyzEndpointName, mock.AnythingOfType(checkerArgumentType))
 
 	expectedHealthzError := errors.New("healthz error")
 	mockMgr = &cmdManager.MockManager{}

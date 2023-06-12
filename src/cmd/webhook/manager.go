@@ -44,6 +44,7 @@ func (provider Provider) createOptions(namespace string) ctrl.Options {
 		Scheme:             scheme.Scheme,
 		MetricsBindAddress: metricsBindAddress,
 		Port:               port,
+		HealthProbeBindAddress: ":10080",
 	}
 }
 
