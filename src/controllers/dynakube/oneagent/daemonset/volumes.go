@@ -119,6 +119,14 @@ func getCertificateVolume(instance *dynatracev1beta1.DynaKube) corev1.Volume {
 }
 
 func getCSIStorageVolume(instance *dynatracev1beta1.DynaKube) corev1.Volume {
+	if instance.FeatureReadOnlyCsiVolume() {
+		return corev1.Volume{
+			Name: csiStorageVolumeName,
+			VolumeSource: corev1.VolumeSource{
+				EmptyDir: &corev1.EmptyDirVolumeSource{},
+			},
+		}
+	}
 	return corev1.Volume{
 		Name: csiStorageVolumeName,
 		VolumeSource: corev1.VolumeSource{
