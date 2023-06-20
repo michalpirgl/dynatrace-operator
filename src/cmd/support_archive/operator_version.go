@@ -15,7 +15,7 @@ type operatorVersionCollector struct {
 	collectorCommon
 }
 
-func newOperatorVersionCollector(log logr.Logger, supportArchive tarball) collector {
+func newOperatorVersionCollector(log logr.Logger, supportArchive tarballer) collector {
 	return operatorVersionCollector{
 		collectorCommon{
 			log:            log,

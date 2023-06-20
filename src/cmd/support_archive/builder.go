@@ -87,11 +87,11 @@ func (builder CommandBuilder) buildRun() func(*cobra.Command, []string) error {
 			return errors.WithStack(err)
 		}
 
-		tarFile, err := createTarballTargetFile(tarballToStdoutFlagValue, defaultSupportArchiveTargetDir)
+		tarFile, err := createZipballTargetFile(tarballToStdoutFlagValue, defaultSupportArchiveTargetDir)
 		if err != nil {
 			return err
 		}
-		supportArchive := newTarball(tarFile)
+		supportArchive := newZipball(tarFile)
 		defer tarFile.Close()
 		defer supportArchive.close()
 
@@ -116,7 +116,7 @@ func getLogOutput(tarballToStdout bool, logBuffer *bytes.Buffer) io.Writer {
 	}
 }
 
-func (builder CommandBuilder) runCollectors(log logr.Logger, supportArchive tarball) error {
+func (builder CommandBuilder) runCollectors(log logr.Logger, supportArchive tarballer) error {
 	context := context.Background()
 
 	kubeConfig, err := builder.configProvider.GetConfig()
