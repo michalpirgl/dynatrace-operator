@@ -11,8 +11,9 @@ type loadGenerator struct {
 	bytesLeftToRead int64
 }
 
-// var alphaNumeric = []byte("abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789 ")
-var alphaNumeric = []byte("a")
+var alphaNumeric = []byte("abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789 ")
+
+//var alphaNumeric = []byte("a")
 
 func (lg *loadGenerator) Read(p []byte) (n int, err error) {
 	if lg.bytesLeftToRead <= 0 {

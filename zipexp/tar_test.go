@@ -6,7 +6,7 @@ import (
 	"testing"
 )
 
-func TestMultiFileTar(t *testing.T) { testLogFileCompressionTar(100, 5, t) }
+func TestMultiFileTar(t *testing.T) { testLogFileCompressionTar(logFileSizeInMB, numberOfLogFiles, t) }
 
 func testLogFileCompressionTar(testSizeInMB int64, numberOfFiles int, t *testing.T) {
 	testSize := 1024 * 1024 * testSizeInMB

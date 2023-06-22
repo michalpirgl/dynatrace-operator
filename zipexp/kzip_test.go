@@ -10,7 +10,9 @@ import (
 	"testing"
 )
 
-func TestMultiFileKZip(t *testing.T) { testFileCompressionKZipInMem(100, 5, t) }
+func TestMultiFileKZip(t *testing.T) {
+	testFileCompressionKZipInMem(logFileSizeInMB, numberOfLogFiles, t)
+}
 
 func testFileCompressionKZipInMem(testSizeInMB int64, numberOfFiles int, t *testing.T) {
 

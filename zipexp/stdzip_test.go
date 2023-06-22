@@ -10,7 +10,9 @@ import (
 	"testing"
 )
 
-func TestMultiFileStdZip(t *testing.T) { testLogFileCompressionStdZipInMem(1000, 3, t) }
+func TestMultiFileStdZip(t *testing.T) {
+	testLogFileCompressionStdZipInMem(logFileSizeInMB, numberOfLogFiles, t)
+}
 
 func testLogFileCompressionStdZipInMem(testSizeInMB int64, numberOfFiles int, t *testing.T) {
 
