@@ -3,6 +3,7 @@ module github.com/Dynatrace/dynatrace-operator
 go 1.20
 
 require (
+	github.com/alecthomas/units v0.0.0-20211218093645-b94a6e3cc137
 	github.com/bcicen/go-units v1.0.5
 	github.com/container-storage-interface/spec v1.8.0
 	github.com/containers/image/v5 v5.25.0
@@ -22,7 +23,6 @@ require (
 	golang.org/x/exp v0.0.0-20230321023759-10a507213a29
 	golang.org/x/net v0.11.0
 	golang.org/x/sys v0.9.0
-	golang.org/x/text v0.10.0
 	google.golang.org/grpc v1.56.0
 	istio.io/api v0.0.0-20230523222408-21e7bb4b66a2
 	istio.io/client-go v1.17.3
@@ -142,6 +142,7 @@ require (
 	golang.org/x/oauth2 v0.7.0 // indirect
 	golang.org/x/sync v0.2.0 // indirect
 	golang.org/x/term v0.9.0 // indirect
+	golang.org/x/text v0.10.0 // indirect
 	golang.org/x/time v0.3.0 // indirect
 	golang.org/x/tools v0.6.0 // indirect
 	gomodules.xyz/jsonpatch/v2 v2.2.0 // indirect
