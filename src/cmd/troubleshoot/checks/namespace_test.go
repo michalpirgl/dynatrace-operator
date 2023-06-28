@@ -1,6 +1,7 @@
-package troubleshoot
+package checks
 
 import (
+	"github.com/Dynatrace/dynatrace-operator/src/cmd/troubleshoot"
 	"testing"
 
 	"github.com/Dynatrace/dynatrace-operator/src/scheme"
@@ -11,7 +12,7 @@ import (
 )
 
 const (
-	testDynakube       = "dynakube"
+	testDynakube       = "dynaKube"
 	testUID            = "test-uid"
 	testNamespace      = "dynatrace"
 	testOtherNamespace = "othernamespace"
@@ -29,7 +30,7 @@ func TestTroubleshootNamespace(t *testing.T) {
 			}).
 			Build()
 
-		troubleshootCtx := TroubleshootContext{ApiReader: clt, Namespace: testNamespace}
+		troubleshootCtx := troubleshoot.TroubleshootContext{ApiReader: clt, Namespace: testNamespace}
 		assert.NoErrorf(t, checkNamespace(&troubleshootCtx), "'%s' namespace not found", troubleshootCtx.Namespace)
 	})
 	t.Run("namespace does not exist in cluster", func(t *testing.T) {
@@ -43,7 +44,7 @@ func TestTroubleshootNamespace(t *testing.T) {
 			}).
 			Build()
 
-		troubleshootCtx := TroubleshootContext{ApiReader: clt, Namespace: testNamespace}
+		troubleshootCtx := troubleshoot.TroubleshootContext{ApiReader: clt, Namespace: testNamespace}
 		assert.Errorf(t, checkNamespace(&troubleshootCtx), "'%s' namespace found", troubleshootCtx.Namespace)
 	})
 	t.Run("invalid namespace selected", func(t *testing.T) {
@@ -57,7 +58,7 @@ func TestTroubleshootNamespace(t *testing.T) {
 			}).
 			Build()
 
-		troubleshootCtx := TroubleshootContext{ApiReader: clt, Namespace: testOtherNamespace}
+		troubleshootCtx := troubleshoot.TroubleshootContext{ApiReader: clt, Namespace: testOtherNamespace}
 		assert.Errorf(t, checkNamespace(&troubleshootCtx), "'%s' namespace found", troubleshootCtx.Namespace)
 	})
 }

@@ -42,7 +42,7 @@ func runChecks(results ChecksResults, troubleshootCtx *TroubleshootContext, chec
 
 		err := checkListEntry.Check.Do().Do(troubleshootCtx)
 		if err != nil {
-			logErrorf(err.Error())
+			LogErrorf(err.Error())
 			errs.Add(err)
 			results.set(checkListEntry, FAILED)
 		} else {
@@ -68,7 +68,7 @@ func shouldSkip(results ChecksResults, check *CheckListEntry) bool {
 		return check.Name
 	}
 	prerequisitesNames := strings.Join(functional.Map(failedOrSkippedPrerequisites, getCheckName), ",")
-	logWarningf("Skipped '%s' check because prerequisites aren't met: [%s]", check.Name, prerequisitesNames)
+	LogWarningf("Skipped '%s' check because prerequisites aren't met: [%s]", check.Name, prerequisitesNames)
 
 	return true
 }

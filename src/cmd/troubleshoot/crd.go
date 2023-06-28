@@ -10,7 +10,7 @@ import (
 func checkCRD(troubleshootCtx *TroubleshootContext) error {
 	log = newTroubleshootLogger("crd")
 
-	logNewCheckf("checking if CRD for Dynakube exists ...")
+	LogNewCheckf("checking if CRD for Dynakube exists ...")
 
 	dynakubeList := &dynatracev1beta1.DynaKubeList{}
 	err := troubleshootCtx.ApiReader.List(troubleshootCtx.Context, dynakubeList, &client.ListOptions{Namespace: troubleshootCtx.Namespace})
@@ -19,7 +19,7 @@ func checkCRD(troubleshootCtx *TroubleshootContext) error {
 		return determineDynakubeError(err)
 	}
 
-	logOkf("CRD for Dynakube exists")
+	LogOkf("CRD for Dynakube exists")
 	return nil
 }
 

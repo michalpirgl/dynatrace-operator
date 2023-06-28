@@ -1,6 +1,7 @@
-package troubleshoot
+package checks
 
 import (
+	"github.com/Dynatrace/dynatrace-operator/src/cmd/troubleshoot"
 	"github.com/Dynatrace/dynatrace-operator/src/dtclient"
 	"github.com/Dynatrace/dynatrace-operator/src/kubeobjects"
 	"github.com/go-logr/logr"
@@ -9,26 +10,26 @@ import (
 	"k8s.io/apimachinery/pkg/types"
 )
 
-func checkProxySettings(troubleshootCtx *TroubleshootContext) error {
-	return checkProxySettingsWithLog(troubleshootCtx, newSubTestLogger("proxy"))
+func checkProxySettings(troubleshootCtx *troubleshoot.TroubleshootContext) error {
+	return checkProxySettingsWithLog(troubleshootCtx, troubleshoot.newSubTestLogger("proxy"))
 }
 
-func checkProxySettingsWithLog(troubleshootCtx *TroubleshootContext, logger logr.Logger) error {
+func checkProxySettingsWithLog(troubleshootCtx *troubleshoot.TroubleshootContext, logger logr.Logger) error {
 	log = logger
 
 	var proxyURL string
-	logNewCheckf("Analyzing proxy settings ...")
+	troubleshoot.LogNewCheckf("Analyzing proxy settings ...")
 
 	proxySettingsAvailable := false
 	if troubleshootCtx.dynakube.HasProxy() {
 		proxySettingsAvailable = true
-		logInfof("Reminder: Proxy settings in the Dynakube do not apply to pulling of pod images. Please set your proxy on accordingly on node level.")
-		logWarningf("Proxy settings in the Dynakube are ignored for codeModules images due to technical limitations.")
+		troubleshoot.LogInfof("Reminder: Proxy settings in the Dynakube do not apply to pulling of pod images. Please set your proxy on accordingly on node level.")
+		troubleshoot.LogWarningf("Proxy settings in the Dynakube are ignored for codeModules images due to technical limitations.")
 
 		var err error
 		proxyURL, err = getProxyURL(troubleshootCtx)
 		if err != nil {
-			logErrorf("Unexpected error when reading proxy settings from Dynakube: %v", err)
+			troubleshoot.LogErrorf("Unexpected error when reading proxy settings from Dynakube: %v", err)
 			return nil
 		}
 	}
@@ -38,7 +39,7 @@ func checkProxySettingsWithLog(troubleshootCtx *TroubleshootContext, logger logr
 	}
 
 	if !proxySettingsAvailable {
-		logOkf("No proxy settings found.")
+		troubleshoot.LogOkf("No proxy settings found.")
 	}
 	return nil
 }
@@ -49,17 +50,17 @@ func checkEnvironmentProxySettings(proxyURL string) bool {
 		return false
 	}
 
-	logInfof("Searching environment for proxy settings ...")
+	troubleshoot.LogInfof("Searching environment for proxy settings ...")
 	if envProxy.HTTPProxy != "" {
-		logWarningf("HTTP_PROXY is set in environment. This setting will be used by the operator for codeModule image pulls.")
+		troubleshoot.LogWarningf("HTTP_PROXY is set in environment. This setting will be used by the operator for codeModule image pulls.")
 		if proxySettingsDiffer(envProxy.HTTPProxy, proxyURL) {
-			logWarningf("Proxy settings in the Dynakube and HTTP_PROXY differ.")
+			troubleshoot.LogWarningf("Proxy settings in the Dynakube and HTTP_PROXY differ.")
 		}
 	}
 	if envProxy.HTTPSProxy != "" {
-		logWarningf("HTTPS_PROXY is set in environment. This setting will be used by the operator for codeModule image pulls.")
+		troubleshoot.LogWarningf("HTTPS_PROXY is set in environment. This setting will be used by the operator for codeModule image pulls.")
 		if proxySettingsDiffer(envProxy.HTTPSProxy, proxyURL) {
-			logWarningf("Proxy settings in the Dynakube and HTTPS_PROXY differ.")
+			troubleshoot.LogWarningf("Proxy settings in the Dynakube and HTTPS_PROXY differ.")
 		}
 	}
 	return true
@@ -77,7 +78,7 @@ func getEnvProxySettings() *httpproxy.Config {
 	return nil
 }
 
-func applyProxySettings(troubleshootCtx *TroubleshootContext) error {
+func applyProxySettings(troubleshootCtx *troubleshoot.TroubleshootContext) error {
 	proxyURL, err := getProxyURL(troubleshootCtx)
 	if err != nil {
 		return err
@@ -93,7 +94,7 @@ func applyProxySettings(troubleshootCtx *TroubleshootContext) error {
 	return nil
 }
 
-func getProxyURL(troubleshootCtx *TroubleshootContext) (string, error) {
+func getProxyURL(troubleshootCtx *troubleshoot.TroubleshootContext) (string, error) {
 	if troubleshootCtx.dynakube.Spec.Proxy == nil {
 		return "", nil
 	}
@@ -117,7 +118,7 @@ func getProxyURL(troubleshootCtx *TroubleshootContext) (string, error) {
 	return "", nil
 }
 
-func setProxySecret(troubleshootCtx *TroubleshootContext) error {
+func setProxySecret(troubleshootCtx *troubleshoot.TroubleshootContext) error {
 	if troubleshootCtx.proxySecret != nil {
 		return nil
 	}
@@ -133,7 +134,7 @@ func setProxySecret(troubleshootCtx *TroubleshootContext) error {
 	}
 
 	troubleshootCtx.proxySecret = &secret
-	logInfof("proxy secret '%s:%s' exists",
+	troubleshoot.LogInfof("proxy secret '%s:%s' exists",
 		troubleshootCtx.Namespace, troubleshootCtx.dynakube.Spec.Proxy.ValueFrom)
 	return nil
 }

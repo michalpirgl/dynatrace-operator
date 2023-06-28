@@ -1,7 +1,8 @@
-package troubleshoot
+package checks
 
 import (
 	"context"
+	"github.com/Dynatrace/dynatrace-operator/src/cmd/troubleshoot"
 
 	"github.com/go-logr/logr"
 	"github.com/pkg/errors"
@@ -30,7 +31,7 @@ func (c namespaceCheck) Name() string {
 func (c namespaceCheck) Do(baseLog logr.Logger) error {
 	log := baseLog.WithName(c.Name())
 
-	logNewCheckf(log, "checking if namespace '%s' exists ...", c.namespace)
+	troubleshoot.LogNewCheckf(log, "checking if namespace '%s' exists ...", c.namespace)
 
 	var namespace corev1.Namespace
 	err := c.apiReader.Get(c.ctx, client.ObjectKey{Name: c.namespace}, &namespace)
@@ -39,6 +40,6 @@ func (c namespaceCheck) Do(baseLog logr.Logger) error {
 		return errors.Wrapf(err, "missing namespace '%s'", c.namespace)
 	}
 
-	logOkf(log, "using namespace '%s'", c.namespace)
+	troubleshoot.LogOkf(log, "using namespace '%s'", c.namespace)
 	return nil
 }

@@ -2,43 +2,43 @@ package troubleshoot
 
 import "github.com/Dynatrace/dynatrace-operator/src/api/v1beta1"
 
-type component string
+type Component string
 
 const (
-	componentOneAgent    component = "OneAgent"
-	componentCodeModules component = "OneAgentCodeModules"
-	componentActiveGate  component = "ActiveGate"
+	ComponentOneAgent    Component = "OneAgent"
+	ComponentCodeModules Component = "OneAgentCodeModules"
+	ComponentActiveGate  Component = "ActiveGate"
 
 	customImagePostfix = " (custom image)"
 )
 
-func (c component) String() string {
+func (c Component) String() string {
 	return string(c)
 }
 
-func (c component) Name(isCustomImage bool) string {
+func (c Component) Name(isCustomImage bool) string {
 	if isCustomImage {
 		return c.String() + customImagePostfix
 	}
 	return c.String()
 }
 
-func (c component) SkipImageCheck(image string) bool {
-	return image == "" && c != componentCodeModules
+func (c Component) SkipImageCheck(image string) bool {
+	return image == "" && c != ComponentCodeModules
 }
 
-func (c component) getImage(dynakube *v1beta1.DynaKube) (string, bool) {
-	if dynakube == nil {
+func (c Component) GetImage(dynaKube *v1beta1.DynaKube) (string, bool) {
+	if dynaKube == nil {
 		return "", false
 	}
 
 	switch c {
-	case componentOneAgent:
-		return dynakube.OneAgentImage(), dynakube.CustomOneAgentImage() != ""
-	case componentCodeModules:
-		return dynakube.CodeModulesImage(), true
-	case componentActiveGate:
-		activeGateImage := dynakube.ActiveGateImage()
+	case ComponentOneAgent:
+		return dynaKube.OneAgentImage(), dynaKube.CustomOneAgentImage() != ""
+	case ComponentCodeModules:
+		return dynaKube.CodeModulesImage(), true
+	case ComponentActiveGate:
+		activeGateImage := dynaKube.ActiveGateImage()
 		return activeGateImage, activeGateImage != ""
 	}
 	return "", false

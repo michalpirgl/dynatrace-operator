@@ -1,8 +1,9 @@
-package troubleshoot
+package checks
 
 import (
 	"bytes"
 	"context"
+	"github.com/Dynatrace/dynatrace-operator/src/cmd/troubleshoot"
 	"os"
 	"testing"
 
@@ -19,7 +20,7 @@ func TestCheckProxySettings(t *testing.T) {
 		os.Setenv("HTTP_PROXY", "")
 		os.Setenv("HTTPS_PROXY", "")
 
-		troubleshootCtx := TroubleshootContext{
+		troubleshootCtx := troubleshoot.TroubleshootContext{
 			Context:   context.TODO(),
 			Namespace: testNamespace,
 		}
@@ -38,7 +39,7 @@ func TestCheckProxySettings(t *testing.T) {
 		os.Setenv("HTTP_PROXY", "foobar:1234")
 		os.Setenv("HTTPS_PROXY", "")
 
-		troubleshootCtx := TroubleshootContext{
+		troubleshootCtx := troubleshoot.TroubleshootContext{
 			Context:   context.TODO(),
 			Namespace: testNamespace,
 		}
@@ -57,7 +58,7 @@ func TestCheckProxySettings(t *testing.T) {
 		os.Setenv("HTTP_PROXY", "")
 		os.Setenv("HTTPS_PROXY", "foobar:1234")
 
-		troubleshootCtx := TroubleshootContext{
+		troubleshootCtx := troubleshoot.TroubleshootContext{
 			Context:   context.TODO(),
 			Namespace: testNamespace,
 		}
@@ -76,12 +77,12 @@ func TestCheckProxySettings(t *testing.T) {
 		os.Setenv("HTTP_PROXY", "")
 		os.Setenv("HTTPS_PROXY", "")
 
-		troubleshootCtx := TroubleshootContext{
+		troubleshootCtx := troubleshoot.TroubleshootContext{
 			Context:   context.TODO(),
 			Namespace: testNamespace,
 		}
 
-		troubleshootCtx.dynakube = *testNewDynakubeBuilder(testNamespace, testDynakube).
+		troubleshootCtx.dynakube = *troubleshoot.testNewDynakubeBuilder(testNamespace, testDynakube).
 			withProxy("http://foobar:1234").
 			build()
 
@@ -99,26 +100,26 @@ func TestCheckProxySettings(t *testing.T) {
 		os.Setenv("HTTP_PROXY", "")
 		os.Setenv("HTTPS_PROXY", "")
 
-		proxySecret := testNewSecretBuilder(testNamespace, testSecretName)
+		proxySecret := troubleshoot.testNewSecretBuilder(testNamespace, troubleshoot.testSecretName)
 		proxySecret.dataAppend(dtclient.CustomProxySecretKey, "foobar:1234")
 
 		clt := fake.NewClientBuilder().
 			WithScheme(scheme.Scheme).
 			WithObjects(
-				testNewDynakubeBuilder(testNamespace, testDynakube).withProxySecret(testSecretName).build(),
-				testBuildNamespace(testNamespace),
+				troubleshoot.testNewDynakubeBuilder(testNamespace, testDynakube).withProxySecret(troubleshoot.testSecretName).build(),
+				troubleshoot.testBuildNamespace(testNamespace),
 				proxySecret.build(),
 			).
 			Build()
 
-		troubleshootCtx := TroubleshootContext{
+		troubleshootCtx := troubleshoot.TroubleshootContext{
 			Context:   context.TODO(),
 			ApiReader: clt,
 			Namespace: testNamespace,
 		}
 
-		troubleshootCtx.dynakube = *testNewDynakubeBuilder(testNamespace, testDynakube).
-			withProxySecret(testSecretName).
+		troubleshootCtx.dynakube = *troubleshoot.testNewDynakubeBuilder(testNamespace, testDynakube).
+			withProxySecret(troubleshoot.testSecretName).
 			build()
 
 		logOutput := runProxyTestWithTestLogger(t.Name(), func(logger logr.Logger) {
@@ -135,12 +136,12 @@ func TestCheckProxySettings(t *testing.T) {
 		os.Setenv("HTTP_PROXY", "foobar:1234")
 		os.Setenv("HTTPS_PROXY", "foobar:1234")
 
-		troubleshootCtx := TroubleshootContext{
+		troubleshootCtx := troubleshoot.TroubleshootContext{
 			Context:   context.TODO(),
 			Namespace: testNamespace,
 		}
 
-		troubleshootCtx.dynakube = *testNewDynakubeBuilder(testNamespace, testDynakube).
+		troubleshootCtx.dynakube = *troubleshoot.testNewDynakubeBuilder(testNamespace, testDynakube).
 			withProxy("http://foobar:1234").
 			build()
 
@@ -158,7 +159,7 @@ func TestCheckProxySettings(t *testing.T) {
 
 func runProxyTestWithTestLogger(testName string, function func(logger logr.Logger)) string {
 	logBuffer := bytes.Buffer{}
-	logger := newTroubleshootLoggerToWriter(testName, &logBuffer)
+	logger := troubleshoot.newTroubleshootLoggerToWriter(testName, &logBuffer)
 	function(logger)
 	return logBuffer.String()
 }

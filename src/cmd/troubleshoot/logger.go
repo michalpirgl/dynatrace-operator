@@ -52,7 +52,7 @@ func newRawTroubleshootLogger(testName string, out io.Writer) troubleshootLogger
 	}
 }
 
-func newTroubleshootLoggerToWriter(testName string, out io.Writer) logr.Logger {
+func NewTroubleshootLoggerToWriter(testName string, out io.Writer) logr.Logger {
 	return logr.New(newRawTroubleshootLogger(testName, out))
 }
 
@@ -61,34 +61,34 @@ func newSubTestLoggerToWriter(testName string, out io.Writer) logr.Logger {
 }
 
 func newTroubleshootLogger(testName string) logr.Logger {
-	return newTroubleshootLoggerToWriter(testName, os.Stdout)
+	return NewTroubleshootLoggerToWriter(testName, os.Stdout)
 }
 
 func newSubTestLogger(testName string) logr.Logger {
 	return newSubTestLoggerToWriter(testName, os.Stdout)
 }
 
-func logNewCheckf(log logr.Logger, format string, v ...interface{}) {
+func LogNewCheckf(log logr.Logger, format string, v ...interface{}) {
 	log.V(levelNewCheck).Info(fmt.Sprintf(format, v...))
 }
 
-func logNewDynakubef(log logr.Logger, format string, v ...interface{}) {
+func LogNewDynakubef(log logr.Logger, format string, v ...interface{}) {
 	log.V(levelNewDynakube).Info(fmt.Sprintf(format, v...))
 }
 
-func logInfof(log logr.Logger, format string, v ...interface{}) {
+func LogInfof(log logr.Logger, format string, v ...interface{}) {
 	log.Info(fmt.Sprintf(format, v...))
 }
 
-func logOkf(log logr.Logger, format string, v ...interface{}) {
+func LogOkf(log logr.Logger, format string, v ...interface{}) {
 	log.V(levelSuccess).Info(fmt.Sprintf(format, v...))
 }
 
-func logWarningf(log logr.Logger, format string, v ...interface{}) {
+func LogWarningf(log logr.Logger, format string, v ...interface{}) {
 	log.V(levelWarning).Info(fmt.Sprintf(format, v...))
 }
 
-func logErrorf(log logr.Logger, format string, v ...interface{}) {
+func LogErrorf(log logr.Logger, format string, v ...interface{}) {
 	log.V(levelError).Info(fmt.Sprintf(format, v...))
 }
 

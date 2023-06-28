@@ -37,7 +37,7 @@ func (troubleshootCtx *TroubleshootContext) SetTransportProxy(proxy string) erro
 		}
 
 		troubleshootCtx.HttpClient.Transport.(*http.Transport).Proxy = http.ProxyURL(proxyUrl)
-		logInfof("using '%s' proxy to connect to the registry", proxyUrl.Host)
+		LogInfof("using '%s' proxy to connect to the registry", proxyUrl.Host)
 	}
 	return nil
 }

@@ -1,9 +1,10 @@
-package troubleshoot
+package checks
 
 import (
 	"bytes"
 	"context"
 	"encoding/json"
+	"github.com/Dynatrace/dynatrace-operator/src/cmd/troubleshoot"
 	"net/http"
 	"net/http/httptest"
 	"net/url"
@@ -60,14 +61,14 @@ func createSecret(auths Auths) (*corev1.Secret, error) {
 	if err != nil {
 		return nil, err
 	}
-	return testNewSecretBuilder(testNamespace, testDynakube+pullSecretSuffix).
+	return troubleshoot.testNewSecretBuilder(testNamespace, testDynakube+pullSecretSuffix).
 		dataAppend(dtpullsecret.DockerConfigJson, string(authsBytes)).
 		build(), nil
 }
 
 func runWithTestLogger(testName string, function func()) string {
 	logBuffer := bytes.Buffer{}
-	logger := newTroubleshootLoggerToWriter(testName, &logBuffer)
+	logger := troubleshoot.NewTroubleshootLoggerToWriter(testName, &logBuffer)
 
 	oldLog := log
 	log = logger
@@ -86,85 +87,51 @@ func TestOneAgentImagePullable(t *testing.T) {
 	require.NoError(t, err)
 	defer dockerServer.Close()
 
-	troubleshootCtx := TroubleshootContext{
-		Context:    context.TODO(),
-		Namespace:  testNamespace,
-		pullSecret: *secret,
-		HttpClient: dockerServer.Client(),
-	}
-
-	t.Run("OneAgent image", func(t *testing.T) {
-		troubleshootCtx.dynakube = *testNewDynakubeBuilder(testNamespace, testDynakube).
+	tests := map[string]v1beta1.DynaKube{
+		"OneAgent image": *testNewDynakubeBuilder(testNamespace, testDynakube).
 			withApiUrl(dockerServer.URL + "/api").
 			withCloudNativeFullStack().
-			build()
-
-		logOutput := runWithTestLogger(t.Name(), func() {
-			verifyImageIsAvailable(&troubleshootCtx, componentOneAgent, false)
-		})
-		assert.NotContains(t, logOutput, "failed")
-		assert.Contains(t, logOutput, "can be successfully pulled")
-	})
-	t.Run("OneAgent versioned image for CloudNativeFullStack", func(t *testing.T) {
-		troubleshootCtx.dynakube = *testNewDynakubeBuilder(testNamespace, testDynakube).
+			build(),
+		"OneAgent versioned image for CloudNativeFullStack": *testNewDynakubeBuilder(testNamespace, testDynakube).
 			withApiUrl(dockerServer.URL + "/api").
 			withCloudNativeFullStackImageVersion(testVersion).
-			build()
+			build(),
 
-		logOutput := runWithTestLogger(t.Name(), func() {
-			verifyImageIsAvailable(&troubleshootCtx, componentOneAgent, false)
-		})
-		require.NotContains(t, logOutput, "failed")
-		assert.Contains(t, logOutput, "can be successfully pulled")
-	})
-	t.Run("OneAgent latest image for ClassicFullStack", func(t *testing.T) {
-		troubleshootCtx.dynakube = *testNewDynakubeBuilder(testNamespace, testDynakube).
+		"OneAgent latest image for ClassicFullStack": *testNewDynakubeBuilder(testNamespace, testDynakube).
 			withApiUrl(dockerServer.URL + "/api").
 			withClassicFullStack().
-			build()
+			build(),
 
-		logOutput := runWithTestLogger(t.Name(), func() {
-			verifyImageIsAvailable(&troubleshootCtx, componentOneAgent, false)
-		})
-		require.NotContains(t, logOutput, "failed")
-		assert.Contains(t, logOutput, "can be successfully pulled")
-	})
-	t.Run("OneAgent versioned image for ClassicFullStack", func(t *testing.T) {
-		troubleshootCtx.dynakube = *testNewDynakubeBuilder(testNamespace, testDynakube).
+		"OneAgent versioned image for ClassicFullStack": *testNewDynakubeBuilder(testNamespace, testDynakube).
 			withApiUrl(dockerServer.URL + "/api").
 			withClassicFullStackImageVersion(testVersion).
-			build()
+			build(),
 
-		logOutput := runWithTestLogger(t.Name(), func() {
-			verifyImageIsAvailable(&troubleshootCtx, componentOneAgent, false)
-		})
-		require.NotContains(t, logOutput, "failed")
-		assert.Contains(t, logOutput, "can be successfully pulled")
-	})
-	t.Run("OneAgent latest image for HostMonitoring", func(t *testing.T) {
-		troubleshootCtx.dynakube = *testNewDynakubeBuilder(testNamespace, testDynakube).
+		"OneAgent latest image for HostMonitoring": *testNewDynakubeBuilder(testNamespace, testDynakube).
 			withApiUrl(dockerServer.URL + "/api").
 			withHostMonitoring().
-			build()
+			build(),
 
-		logOutput := runWithTestLogger(t.Name(), func() {
-			verifyImageIsAvailable(&troubleshootCtx, componentOneAgent, false)
-		})
-		require.NotContains(t, logOutput, "failed")
-		assert.Contains(t, logOutput, "can be successfully pulled")
-	})
-	t.Run("OneAgent versioned image for HostMonitoring", func(t *testing.T) {
-		troubleshootCtx.dynakube = *testNewDynakubeBuilder(testNamespace, testDynakube).
+		"OneAgent versioned image for HostMonitoring": *testNewDynakubeBuilder(testNamespace, testDynakube).
 			withApiUrl(dockerServer.URL + "/api").
 			withHostMonitoringImageVersion(testVersion).
-			build()
+			build(),
+	}
 
-		logOutput := runWithTestLogger(t.Name(), func() {
-			verifyImageIsAvailable(&troubleshootCtx, componentOneAgent, false)
+	for testName, dynaKube := range tests {
+		t.Run(testName, func(t *testing.T) {
+			logBuffer := bytes.Buffer{}
+			logger := troubleshoot.NewTroubleshootLoggerToWriter(testName, &logBuffer)
+
+			check := newImageCheck(context.TODO(), dynaKube, *secret, nil)
+			check.log = logger
+			check.verifyImageIsAvailable(troubleshoot.ComponentOneAgent, false)
+			logOutput := logBuffer.String()
+
+			assert.NotContains(t, logOutput, "failed")
+			assert.Contains(t, logOutput, "can be successfully pulled")
 		})
-		require.NotContains(t, logOutput, "failed")
-		assert.Contains(t, logOutput, "can be successfully pulled")
-	})
+	}
 }
 
 func TestOneAgentCustomImagePullable(t *testing.T) {
@@ -177,7 +144,7 @@ func TestOneAgentCustomImagePullable(t *testing.T) {
 	require.NoError(t, err)
 	defer dockerServer.Close()
 
-	troubleshootCtx := TroubleshootContext{
+	troubleshootCtx := troubleshoot.TroubleshootContext{
 		HttpClient: dockerServer.Client(),
 		Namespace:  testNamespace,
 		Context:    context.TODO(),
@@ -185,109 +152,109 @@ func TestOneAgentCustomImagePullable(t *testing.T) {
 	}
 
 	t.Run("OneAgent CloudNativeFullStack unversioned custom image", func(t *testing.T) {
-		troubleshootCtx.dynakube = *testNewDynakubeBuilder(testNamespace, testDynakube).
+		troubleshootCtx.dynakube = *troubleshoot.testNewDynakubeBuilder(testNamespace, testDynakube).
 			withApiUrl(dockerServer.URL + "/api").
 			withCloudNativeFullStackCustomImage(server + "/" + testCustomOneAgentImage).
 			build()
 
 		logOutput := runWithTestLogger(t.Name(), func() {
-			verifyImageIsAvailable(&troubleshootCtx, componentOneAgent, false)
+			verifyImageIsAvailable(&troubleshootCtx, troubleshoot.ComponentOneAgent, false)
 		})
 		require.NotContains(t, logOutput, "failed")
 		assert.Contains(t, logOutput, "can be successfully pulled")
 	})
 	t.Run("OneAgent CloudNativeFullStack latest custom image", func(t *testing.T) {
-		troubleshootCtx.dynakube = *testNewDynakubeBuilder(testNamespace, testDynakube).
+		troubleshootCtx.dynakube = *troubleshoot.testNewDynakubeBuilder(testNamespace, testDynakube).
 			withApiUrl(dockerServer.URL + "/api").
 			withCloudNativeFullStackCustomImage(server + "/" + testCustomOneAgentImage + ":latest").
 			build()
 
 		logOutput := runWithTestLogger(t.Name(), func() {
-			verifyImageIsAvailable(&troubleshootCtx, componentOneAgent, false)
+			verifyImageIsAvailable(&troubleshootCtx, troubleshoot.ComponentOneAgent, false)
 		})
 		require.NotContains(t, logOutput, "failed")
 		assert.Contains(t, logOutput, "can be successfully pulled")
 	})
 	t.Run("OneAgent CloudNativeFullStack versioned custom image", func(t *testing.T) {
-		troubleshootCtx.dynakube = *testNewDynakubeBuilder(testNamespace, testDynakube).
+		troubleshootCtx.dynakube = *troubleshoot.testNewDynakubeBuilder(testNamespace, testDynakube).
 			withApiUrl(dockerServer.URL + "/api").
 			withCloudNativeFullStackCustomImage(server + "/" + testCustomOneAgentImage + ":" + testVersion).
 			build()
 
 		logOutput := runWithTestLogger(t.Name(), func() {
-			verifyImageIsAvailable(&troubleshootCtx, componentOneAgent, false)
+			verifyImageIsAvailable(&troubleshootCtx, troubleshoot.ComponentOneAgent, false)
 		})
 		require.NotContains(t, logOutput, "failed")
 		assert.Contains(t, logOutput, "can be successfully pulled")
 	})
 	t.Run("OneAgent ClassicFullStack custom image", func(t *testing.T) {
-		troubleshootCtx.dynakube = *testNewDynakubeBuilder(testNamespace, testDynakube).
+		troubleshootCtx.dynakube = *troubleshoot.testNewDynakubeBuilder(testNamespace, testDynakube).
 			withApiUrl(dockerServer.URL + "/api").
 			withClassicFullStackCustomImage(server + "/" + testCustomOneAgentImage).
 			build()
 
 		logOutput := runWithTestLogger(t.Name(), func() {
-			verifyImageIsAvailable(&troubleshootCtx, componentOneAgent, false)
+			verifyImageIsAvailable(&troubleshootCtx, troubleshoot.ComponentOneAgent, false)
 		})
 		require.NotContains(t, logOutput, "failed")
 		assert.Contains(t, logOutput, "can be successfully pulled")
 	})
 	t.Run("OneAgent ClassicFullStack latest custom image", func(t *testing.T) {
-		troubleshootCtx.dynakube = *testNewDynakubeBuilder(testNamespace, testDynakube).
+		troubleshootCtx.dynakube = *troubleshoot.testNewDynakubeBuilder(testNamespace, testDynakube).
 			withApiUrl(dockerServer.URL + "/api").
 			withClassicFullStackCustomImage(server + "/" + testCustomOneAgentImage + ":latest").
 			build()
 
 		logOutput := runWithTestLogger(t.Name(), func() {
-			verifyImageIsAvailable(&troubleshootCtx, componentOneAgent, false)
+			verifyImageIsAvailable(&troubleshootCtx, troubleshoot.ComponentOneAgent, false)
 		})
 		require.NotContains(t, logOutput, "failed")
 		assert.Contains(t, logOutput, "can be successfully pulled")
 	})
 	t.Run("OneAgent ClassicFullStack versioned custom image", func(t *testing.T) {
-		troubleshootCtx.dynakube = *testNewDynakubeBuilder(testNamespace, testDynakube).
+		troubleshootCtx.dynakube = *troubleshoot.testNewDynakubeBuilder(testNamespace, testDynakube).
 			withApiUrl(dockerServer.URL + "/api").
 			withClassicFullStackCustomImage(server + "/" + testCustomOneAgentImage + ":" + testVersion).
 			build()
 
 		logOutput := runWithTestLogger(t.Name(), func() {
-			verifyImageIsAvailable(&troubleshootCtx, componentOneAgent, false)
+			verifyImageIsAvailable(&troubleshootCtx, troubleshoot.ComponentOneAgent, false)
 		})
 		require.NotContains(t, logOutput, "failed")
 		assert.Contains(t, logOutput, "can be successfully pulled")
 	})
 	t.Run("OneAgent HostMonitoring custom image", func(t *testing.T) {
-		troubleshootCtx.dynakube = *testNewDynakubeBuilder(testNamespace, testDynakube).
+		troubleshootCtx.dynakube = *troubleshoot.testNewDynakubeBuilder(testNamespace, testDynakube).
 			withApiUrl(dockerServer.URL + "/api").
 			withHostMonitoringCustomImage(server + "/" + testCustomOneAgentImage).
 			build()
 
 		logOutput := runWithTestLogger(t.Name(), func() {
-			verifyImageIsAvailable(&troubleshootCtx, componentOneAgent, false)
+			verifyImageIsAvailable(&troubleshootCtx, troubleshoot.ComponentOneAgent, false)
 		})
 		require.NotContains(t, logOutput, "failed")
 		assert.Contains(t, logOutput, "can be successfully pulled")
 	})
 	t.Run("OneAgent HostMonitoring latest custom image", func(t *testing.T) {
-		troubleshootCtx.dynakube = *testNewDynakubeBuilder(testNamespace, testDynakube).
+		troubleshootCtx.dynakube = *troubleshoot.testNewDynakubeBuilder(testNamespace, testDynakube).
 			withApiUrl(dockerServer.URL + "/api").
 			withHostMonitoringCustomImage(server + "/" + testCustomOneAgentImage + ":latest").
 			build()
 
 		logOutput := runWithTestLogger(t.Name(), func() {
-			verifyImageIsAvailable(&troubleshootCtx, componentOneAgent, false)
+			verifyImageIsAvailable(&troubleshootCtx, troubleshoot.ComponentOneAgent, false)
 		})
 		require.NotContains(t, logOutput, "failed")
 		assert.Contains(t, logOutput, "can be successfully pulled")
 	})
 	t.Run("OneAgent HostMonitoring versioned custom image", func(t *testing.T) {
-		troubleshootCtx.dynakube = *testNewDynakubeBuilder(testNamespace, testDynakube).
+		troubleshootCtx.dynakube = *troubleshoot.testNewDynakubeBuilder(testNamespace, testDynakube).
 			withApiUrl(dockerServer.URL + "/api").
 			withHostMonitoringCustomImage(server + "/" + testCustomOneAgentImage + ":" + testVersion).
 			build()
 
 		logOutput := runWithTestLogger(t.Name(), func() {
-			verifyImageIsAvailable(&troubleshootCtx, componentOneAgent, false)
+			verifyImageIsAvailable(&troubleshootCtx, troubleshoot.ComponentOneAgent, false)
 		})
 		require.NotContains(t, logOutput, "failed")
 		assert.Contains(t, logOutput, "can be successfully pulled")
@@ -302,7 +269,7 @@ func TestOneAgentImageNotPullable(t *testing.T) {
 	require.NoError(t, err)
 	defer dockerServer.Close()
 
-	troubleshootCtx := TroubleshootContext{
+	troubleshootCtx := troubleshoot.TroubleshootContext{
 		Context:    context.TODO(),
 		Namespace:  testNamespace,
 		pullSecret: *secret,
@@ -310,91 +277,91 @@ func TestOneAgentImageNotPullable(t *testing.T) {
 	}
 
 	t.Run("OneAgent latest image for CloudNativeFullStack not available", func(t *testing.T) {
-		troubleshootCtx.dynakube = *testNewDynakubeBuilder(testNamespace, testDynakube).
+		troubleshootCtx.dynakube = *troubleshoot.testNewDynakubeBuilder(testNamespace, testDynakube).
 			withApiUrl(dockerServer.URL + "/api").
 			withCloudNativeFullStack().
 			build()
 
 		logOutput := runWithTestLogger(t.Name(), func() {
-			verifyImageIsAvailable(&troubleshootCtx, componentOneAgent, false)
+			verifyImageIsAvailable(&troubleshootCtx, troubleshoot.ComponentOneAgent, false)
 		})
 		require.Contains(t, logOutput, "failed")
 		assert.Contains(t, logOutput, "reading manifest")
 		assert.NotContains(t, logOutput, "can be successfully pulled")
 	})
 	t.Run("OneAgent CloudNativeFullStack non-existing custom image", func(t *testing.T) {
-		troubleshootCtx.dynakube = *testNewDynakubeBuilder(testNamespace, testDynakube).
+		troubleshootCtx.dynakube = *troubleshoot.testNewDynakubeBuilder(testNamespace, testDynakube).
 			withApiUrl(dockerServer.URL + "/api").
 			withCloudNativeFullStackCustomImage(server + "/foobar").
 			build()
 
 		logOutput := runWithTestLogger(t.Name(), func() {
-			verifyImageIsAvailable(&troubleshootCtx, componentOneAgent, false)
+			verifyImageIsAvailable(&troubleshootCtx, troubleshoot.ComponentOneAgent, false)
 		})
 		require.Contains(t, logOutput, "failed")
 		assert.Contains(t, logOutput, "reading manifest")
 		assert.NotContains(t, logOutput, "can be successfully pulled")
 	})
 	t.Run("OneAgent latest image for ClassicFullStack not available", func(t *testing.T) {
-		troubleshootCtx.dynakube = *testNewDynakubeBuilder(testNamespace, testDynakube).
+		troubleshootCtx.dynakube = *troubleshoot.testNewDynakubeBuilder(testNamespace, testDynakube).
 			withApiUrl(dockerServer.URL + "/api").
 			withClassicFullStack().
 			build()
 
 		logOutput := runWithTestLogger(t.Name(), func() {
-			verifyImageIsAvailable(&troubleshootCtx, componentOneAgent, false)
+			verifyImageIsAvailable(&troubleshootCtx, troubleshoot.ComponentOneAgent, false)
 		})
 		require.Contains(t, logOutput, "failed")
 		assert.Contains(t, logOutput, "reading manifest")
 		assert.NotContains(t, logOutput, "can be successfully pulled")
 	})
 	t.Run("OneAgent ClassicFullStack non-existing custom image", func(t *testing.T) {
-		troubleshootCtx.dynakube = *testNewDynakubeBuilder(testNamespace, testDynakube).
+		troubleshootCtx.dynakube = *troubleshoot.testNewDynakubeBuilder(testNamespace, testDynakube).
 			withApiUrl(dockerServer.URL + "/api").
 			withClassicFullStackCustomImage(server + "/foobar").
 			build()
 
 		logOutput := runWithTestLogger(t.Name(), func() {
-			verifyImageIsAvailable(&troubleshootCtx, componentOneAgent, false)
+			verifyImageIsAvailable(&troubleshootCtx, troubleshoot.ComponentOneAgent, false)
 		})
 		require.Contains(t, logOutput, "failed")
 		assert.Contains(t, logOutput, "reading manifest")
 		assert.NotContains(t, logOutput, "can be successfully pulled")
 	})
 	t.Run("OneAgent latest image for HostMonitoring not available", func(t *testing.T) {
-		troubleshootCtx.dynakube = *testNewDynakubeBuilder(testNamespace, testDynakube).
+		troubleshootCtx.dynakube = *troubleshoot.testNewDynakubeBuilder(testNamespace, testDynakube).
 			withApiUrl(dockerServer.URL + "/api").
 			withHostMonitoring().
 			build()
 
 		logOutput := runWithTestLogger(t.Name(), func() {
-			verifyImageIsAvailable(&troubleshootCtx, componentOneAgent, false)
+			verifyImageIsAvailable(&troubleshootCtx, troubleshoot.ComponentOneAgent, false)
 		})
 		require.Contains(t, logOutput, "failed")
 		assert.Contains(t, logOutput, "reading manifest")
 		assert.NotContains(t, logOutput, "can be successfully pulled")
 	})
 	t.Run("OneAgent HostMonitoring non-existing custom image", func(t *testing.T) {
-		troubleshootCtx.dynakube = *testNewDynakubeBuilder(testNamespace, testDynakube).
+		troubleshootCtx.dynakube = *troubleshoot.testNewDynakubeBuilder(testNamespace, testDynakube).
 			withApiUrl(dockerServer.URL + "/api").
 			withHostMonitoringCustomImage(server + "/foobar").
 			build()
 
 		logOutput := runWithTestLogger(t.Name(), func() {
-			verifyImageIsAvailable(&troubleshootCtx, componentOneAgent, false)
+			verifyImageIsAvailable(&troubleshootCtx, troubleshoot.ComponentOneAgent, false)
 		})
 		require.Contains(t, logOutput, "failed")
 		assert.Contains(t, logOutput, "reading manifest")
 		assert.NotContains(t, logOutput, "can be successfully pulled")
 	})
 	t.Run("OneAgent HostMonitoring non-existing server", func(t *testing.T) {
-		troubleshootCtx.dynakube = *testNewDynakubeBuilder(testNamespace, testDynakube).
+		troubleshootCtx.dynakube = *troubleshoot.testNewDynakubeBuilder(testNamespace, testDynakube).
 			withApiUrl(dockerServer.URL + "/api").
 			withHostMonitoringCustomImage("myunknownserver.com/foobar/image").
 			build()
 
 		logOutput := runWithTestLogger(t.Name(), func() {
-			verifyImageIsAvailable(&troubleshootCtx, componentOneAgent, false)
+			verifyImageIsAvailable(&troubleshootCtx, troubleshoot.ComponentOneAgent, false)
 		})
 		require.Contains(t, logOutput, "failed")
 		assert.Contains(t, logOutput, "no such host")
@@ -412,7 +379,7 @@ func TestOneAgentCodeModulesImagePullable(t *testing.T) {
 	require.NoError(t, err)
 	defer dockerServer.Close()
 
-	troubleshootCtx := TroubleshootContext{
+	troubleshootCtx := troubleshoot.TroubleshootContext{
 		Context:    context.TODO(),
 		HttpClient: dockerServer.Client(),
 		Namespace:  testNamespace,
@@ -420,122 +387,122 @@ func TestOneAgentCodeModulesImagePullable(t *testing.T) {
 	}
 
 	t.Run("OneAgent code modules image", func(t *testing.T) {
-		troubleshootCtx.dynakube = *testNewDynakubeBuilder(testNamespace, testDynakube).
+		troubleshootCtx.dynakube = *troubleshoot.testNewDynakubeBuilder(testNamespace, testDynakube).
 			withApiUrl(dockerServer.URL + "/api").
 			withCloudNativeCodeModulesImage(server + "/" + testOneAgentCodeModulesImage + ":" + testVersion).
 			build()
 
 		logOutput := runWithTestLogger(t.Name(), func() {
-			verifyImageIsAvailable(&troubleshootCtx, componentCodeModules, true)
+			verifyImageIsAvailable(&troubleshootCtx, troubleshoot.ComponentCodeModules, true)
 		})
 		assert.NotContains(t, logOutput, "failed")
 		assert.Contains(t, logOutput, "can be successfully pulled")
 	})
 	t.Run("CloudNativeFullStack OneAgent code modules image", func(t *testing.T) {
-		troubleshootCtx.dynakube = *testNewDynakubeBuilder(testNamespace, testDynakube).
+		troubleshootCtx.dynakube = *troubleshoot.testNewDynakubeBuilder(testNamespace, testDynakube).
 			withApiUrl(dockerServer.URL + "/api").
 			withCloudNativeCodeModulesImage(server + "/" + testOneAgentCodeModulesImage + ":" + testVersion).
 			build()
 
 		logOutput := runWithTestLogger(t.Name(), func() {
-			verifyImageIsAvailable(&troubleshootCtx, componentCodeModules, true)
+			verifyImageIsAvailable(&troubleshootCtx, troubleshoot.ComponentCodeModules, true)
 		})
 		require.NotContains(t, logOutput, "failed")
 		assert.Contains(t, logOutput, "can be successfully pulled")
 	})
 	t.Run("CloudNativeFullStack OneAgent code modules latest image", func(t *testing.T) {
-		troubleshootCtx.dynakube = *testNewDynakubeBuilder(testNamespace, testDynakube).
+		troubleshootCtx.dynakube = *troubleshoot.testNewDynakubeBuilder(testNamespace, testDynakube).
 			withApiUrl(dockerServer.URL + "/api").
 			withCloudNativeCodeModulesImage(server + "/" + testOneAgentCodeModulesImage + ":latest").
 			build()
 
 		logOutput := runWithTestLogger(t.Name(), func() {
-			verifyImageIsAvailable(&troubleshootCtx, componentCodeModules, true)
+			verifyImageIsAvailable(&troubleshootCtx, troubleshoot.ComponentCodeModules, true)
 		})
 		require.NotContains(t, logOutput, "failed")
 		assert.Contains(t, logOutput, "can be successfully pulled")
 	})
 	t.Run("CloudNativeFullStack OneAgent code modules unversioned image", func(t *testing.T) {
-		troubleshootCtx.dynakube = *testNewDynakubeBuilder(testNamespace, testDynakube).
+		troubleshootCtx.dynakube = *troubleshoot.testNewDynakubeBuilder(testNamespace, testDynakube).
 			withApiUrl(dockerServer.URL + "/api").
 			withCloudNativeCodeModulesImage(server + "/" + testOneAgentCodeModulesImage).
 			build()
 
 		logOutput := runWithTestLogger(t.Name(), func() {
-			verifyImageIsAvailable(&troubleshootCtx, componentCodeModules, true)
+			verifyImageIsAvailable(&troubleshootCtx, troubleshoot.ComponentCodeModules, true)
 		})
 		require.NotContains(t, logOutput, "failed")
 		assert.Contains(t, logOutput, "can be successfully pulled")
 	})
 	t.Run("ApplicationMonitoring OneAgent code modules image", func(t *testing.T) {
-		troubleshootCtx.dynakube = *testNewDynakubeBuilder(testNamespace, testDynakube).
+		troubleshootCtx.dynakube = *troubleshoot.testNewDynakubeBuilder(testNamespace, testDynakube).
 			withApiUrl(dockerServer.URL + "/api").
 			withApplicationMonitoringCodeModulesImage(server + "/" + testOneAgentCodeModulesImage + ":" + testVersion).
 			build()
 
 		logOutput := runWithTestLogger(t.Name(), func() {
-			verifyImageIsAvailable(&troubleshootCtx, componentCodeModules, true)
+			verifyImageIsAvailable(&troubleshootCtx, troubleshoot.ComponentCodeModules, true)
 		})
 		require.NotContains(t, logOutput, "failed")
 		assert.Contains(t, logOutput, "can be successfully pulled")
 	})
 	t.Run("ApplicationMonitoring OneAgent code modules latest image", func(t *testing.T) {
-		troubleshootCtx.dynakube = *testNewDynakubeBuilder(testNamespace, testDynakube).
+		troubleshootCtx.dynakube = *troubleshoot.testNewDynakubeBuilder(testNamespace, testDynakube).
 			withApiUrl(dockerServer.URL + "/api").
 			withApplicationMonitoringCodeModulesImage(server + "/" + testOneAgentCodeModulesImage + ":latest").
 			build()
 
 		logOutput := runWithTestLogger(t.Name(), func() {
-			verifyImageIsAvailable(&troubleshootCtx, componentCodeModules, true)
+			verifyImageIsAvailable(&troubleshootCtx, troubleshoot.ComponentCodeModules, true)
 		})
 		require.NotContains(t, logOutput, "failed")
 		assert.Contains(t, logOutput, "can be successfully pulled")
 	})
 	t.Run("ApplicationMonitoring OneAgent code modules unversioned image", func(t *testing.T) {
-		troubleshootCtx.dynakube = *testNewDynakubeBuilder(testNamespace, testDynakube).
+		troubleshootCtx.dynakube = *troubleshoot.testNewDynakubeBuilder(testNamespace, testDynakube).
 			withApiUrl(dockerServer.URL + "/api").
 			withApplicationMonitoringCodeModulesImage(server + "/" + testOneAgentCodeModulesImage).
 			build()
 
 		logOutput := runWithTestLogger(t.Name(), func() {
-			verifyImageIsAvailable(&troubleshootCtx, componentCodeModules, true)
+			verifyImageIsAvailable(&troubleshootCtx, troubleshoot.ComponentCodeModules, true)
 		})
 		require.NotContains(t, logOutput, "failed")
 		assert.Contains(t, logOutput, "can be successfully pulled")
 	})
 	t.Run("OneAgent code modules with non-existing image", func(t *testing.T) {
-		troubleshootCtx.dynakube = *testNewDynakubeBuilder(testNamespace, testDynakube).
+		troubleshootCtx.dynakube = *troubleshoot.testNewDynakubeBuilder(testNamespace, testDynakube).
 			withApiUrl(dockerServer.URL + "/api").
 			withCloudNativeCodeModulesImage(server + "/non-existing-image").
 			build()
 
 		logOutput := runWithTestLogger(t.Name(), func() {
-			verifyImageIsAvailable(&troubleshootCtx, componentCodeModules, true)
+			verifyImageIsAvailable(&troubleshootCtx, troubleshoot.ComponentCodeModules, true)
 		})
 		assert.Contains(t, logOutput, "failed")
 		assert.NotContains(t, logOutput, "can be successfully pulled")
 	})
 	t.Run("OneAgent code modules unreachable server", func(t *testing.T) {
-		troubleshootCtx.dynakube = *testNewDynakubeBuilder(testNamespace, testDynakube).
+		troubleshootCtx.dynakube = *troubleshoot.testNewDynakubeBuilder(testNamespace, testDynakube).
 			withApiUrl(dockerServer.URL + "/api").
 			withCloudNativeCodeModulesImage("myunknownserver.com/myrepo/mymissingcodemodules").
 			build()
 
 		logOutput := runWithTestLogger(t.Name(), func() {
-			verifyImageIsAvailable(&troubleshootCtx, componentCodeModules, true)
+			verifyImageIsAvailable(&troubleshootCtx, troubleshoot.ComponentCodeModules, true)
 		})
 		assert.Contains(t, logOutput, "failed")
 		assert.Contains(t, logOutput, "no such host")
 		assert.NotContains(t, logOutput, "can be successfully pulled")
 	})
 	t.Run("OneAgent code modules image with unset image", func(t *testing.T) {
-		troubleshootCtx.dynakube = *testNewDynakubeBuilder(testNamespace, testDynakube).
+		troubleshootCtx.dynakube = *troubleshoot.testNewDynakubeBuilder(testNamespace, testDynakube).
 			withApiUrl(dockerServer.URL + "/api").
 			withCloudNativeCodeModulesImage("").
 			build()
 
 		logOutput := runWithTestLogger(t.Name(), func() {
-			verifyImageIsAvailable(&troubleshootCtx, componentCodeModules, true)
+			verifyImageIsAvailable(&troubleshootCtx, troubleshoot.ComponentCodeModules, true)
 		})
 		assert.NotContains(t, logOutput, "Unknown OneAgentCodeModules image")
 	})
@@ -553,7 +520,7 @@ func TestActiveGateImagePullable(t *testing.T) {
 	require.NoError(t, err)
 	defer dockerServer.Close()
 
-	troubleshootCtx := TroubleshootContext{
+	troubleshootCtx := troubleshoot.TroubleshootContext{
 		Context:    context.TODO(),
 		HttpClient: dockerServer.Client(),
 		Namespace:  testNamespace,
@@ -561,48 +528,48 @@ func TestActiveGateImagePullable(t *testing.T) {
 	}
 
 	t.Run("ActiveGate image", func(t *testing.T) {
-		troubleshootCtx.dynakube = *testNewDynakubeBuilder(testNamespace, testDynakube).
+		troubleshootCtx.dynakube = *troubleshoot.testNewDynakubeBuilder(testNamespace, testDynakube).
 			withApiUrl(dockerServer.URL + "/api").
 			build()
 
 		logOutput := runWithTestLogger(t.Name(), func() {
-			verifyImageIsAvailable(&troubleshootCtx, componentActiveGate, false)
+			verifyImageIsAvailable(&troubleshootCtx, troubleshoot.ComponentActiveGate, false)
 		})
 		assert.NotContains(t, logOutput, "failed")
 		assert.Contains(t, logOutput, "can be successfully pulled")
 	})
 	t.Run("ActiveGate custom image", func(t *testing.T) {
-		troubleshootCtx.dynakube = *testNewDynakubeBuilder(testNamespace, testDynakube).
+		troubleshootCtx.dynakube = *troubleshoot.testNewDynakubeBuilder(testNamespace, testDynakube).
 			withApiUrl(dockerServer.URL + "/api").
 			withActiveGateCustomImage(server + "/" + testActiveGateCustomImage).
 			build()
 
 		logOutput := runWithTestLogger(t.Name(), func() {
-			verifyImageIsAvailable(&troubleshootCtx, componentActiveGate, false)
+			verifyImageIsAvailable(&troubleshootCtx, troubleshoot.ComponentActiveGate, false)
 		})
 		assert.NotContains(t, logOutput, "failed")
 		assert.Contains(t, logOutput, "can be successfully pulled")
 	})
 	t.Run("ActiveGate latest custom image", func(t *testing.T) {
-		troubleshootCtx.dynakube = *testNewDynakubeBuilder(testNamespace, testDynakube).
+		troubleshootCtx.dynakube = *troubleshoot.testNewDynakubeBuilder(testNamespace, testDynakube).
 			withApiUrl(dockerServer.URL + "/api").
 			withActiveGateCustomImage(server + "/" + testActiveGateCustomImage + ":latest").
 			build()
 
 		logOutput := runWithTestLogger(t.Name(), func() {
-			verifyImageIsAvailable(&troubleshootCtx, componentActiveGate, false)
+			verifyImageIsAvailable(&troubleshootCtx, troubleshoot.ComponentActiveGate, false)
 		})
 		assert.NotContains(t, logOutput, "failed")
 		assert.Contains(t, logOutput, "can be successfully pulled")
 	})
 	t.Run("ActiveGate versioned custom image", func(t *testing.T) {
-		troubleshootCtx.dynakube = *testNewDynakubeBuilder(testNamespace, testDynakube).
+		troubleshootCtx.dynakube = *troubleshoot.testNewDynakubeBuilder(testNamespace, testDynakube).
 			withApiUrl(dockerServer.URL + "/api").
 			withActiveGateCustomImage(server + "/" + testActiveGateCustomImage + ":" + testVersion).
 			build()
 
 		logOutput := runWithTestLogger(t.Name(), func() {
-			verifyImageIsAvailable(&troubleshootCtx, componentActiveGate, false)
+			verifyImageIsAvailable(&troubleshootCtx, troubleshoot.ComponentActiveGate, false)
 		})
 		assert.NotContains(t, logOutput, "failed")
 		assert.Contains(t, logOutput, "can be successfully pulled")
@@ -617,7 +584,7 @@ func TestActiveGateImageNotPullable(t *testing.T) {
 	require.NoError(t, err)
 	defer dockerServer.Close()
 
-	troubleshootCtx := TroubleshootContext{
+	troubleshootCtx := troubleshoot.TroubleshootContext{
 		Context:    context.TODO(),
 		HttpClient: dockerServer.Client(),
 		Namespace:  testNamespace,
@@ -625,40 +592,40 @@ func TestActiveGateImageNotPullable(t *testing.T) {
 	}
 
 	t.Run("ActiveGate image", func(t *testing.T) {
-		troubleshootCtx.dynakube = *testNewDynakubeBuilder(testNamespace, testDynakube).
+		troubleshootCtx.dynakube = *troubleshoot.testNewDynakubeBuilder(testNamespace, testDynakube).
 			withApiUrl(dockerServer.URL + "/api").
 			build()
 
 		logOutput := runWithTestLogger(t.Name(), func() {
-			verifyImageIsAvailable(&troubleshootCtx, componentActiveGate, false)
+			verifyImageIsAvailable(&troubleshootCtx, troubleshoot.ComponentActiveGate, false)
 		})
 		require.Contains(t, logOutput, "failed")
 		assert.Contains(t, logOutput, "reading manifest")
 		assert.NotContains(t, logOutput, "can be successfully pulled")
 	})
 	t.Run("ActiveGate custom image", func(t *testing.T) {
-		troubleshootCtx.dynakube = *testNewDynakubeBuilder(testNamespace, testDynakube).
+		troubleshootCtx.dynakube = *troubleshoot.testNewDynakubeBuilder(testNamespace, testDynakube).
 			withApiUrl(dockerServer.URL + "/api").
 			withActiveGateCustomImage(server + "/" + testActiveGateCustomImage).
 			withActiveGateCapability(v1beta1.RoutingCapability.DisplayName).
 			build()
 
 		logOutput := runWithTestLogger(t.Name(), func() {
-			verifyImageIsAvailable(&troubleshootCtx, componentActiveGate, false)
+			verifyImageIsAvailable(&troubleshootCtx, troubleshoot.ComponentActiveGate, false)
 		})
 		require.Contains(t, logOutput, "failed")
 		assert.Contains(t, logOutput, "reading manifest")
 		assert.NotContains(t, logOutput, "can be successfully pulled")
 	})
 	t.Run("ActiveGate custom image non-existing server", func(t *testing.T) {
-		troubleshootCtx.dynakube = *testNewDynakubeBuilder(testNamespace, testDynakube).
+		troubleshootCtx.dynakube = *troubleshoot.testNewDynakubeBuilder(testNamespace, testDynakube).
 			withApiUrl(dockerServer.URL + "/api").
 			withActiveGateCustomImage("myunknownserver.com/foobar/image").
 			withActiveGateCapability(v1beta1.RoutingCapability.DisplayName).
 			build()
 
 		logOutput := runWithTestLogger(t.Name(), func() {
-			verifyImageIsAvailable(&troubleshootCtx, componentActiveGate, false)
+			verifyImageIsAvailable(&troubleshootCtx, troubleshoot.ComponentActiveGate, false)
 		})
 		require.Contains(t, logOutput, "failed")
 		assert.Contains(t, logOutput, "no such host")
@@ -680,22 +647,22 @@ func testDockerServerHandler(method string, urls []string) http.HandlerFunc {
 
 func TestImagePullablePullSecret(t *testing.T) {
 	t.Run("valid pull secret", func(t *testing.T) {
-		troubleshootcontext := TroubleshootContext{
+		troubleshootcontext := troubleshoot.TroubleshootContext{
 			Namespace:  testNamespace,
-			pullSecret: *testNewSecretBuilder(testNamespace, testDynakube+pullSecretSuffix).dataAppend(dtpullsecret.DockerConfigJson, pullSecretFieldValue).build(),
+			pullSecret: *troubleshoot.testNewSecretBuilder(testNamespace, testDynakube+pullSecretSuffix).dataAppend(dtpullsecret.DockerConfigJson, troubleshoot.pullSecretFieldValue).build(),
 		}
 		secret, err := getPullSecretToken(&troubleshootcontext)
 		require.NoErrorf(t, err, "unexpected error")
-		assert.Equal(t, pullSecretFieldValue, secret, "invalid contents of pull secret")
+		assert.Equal(t, troubleshoot.pullSecretFieldValue, secret, "invalid contents of pull secret")
 	})
 
 	t.Run("invalid pull secret", func(t *testing.T) {
-		troubleshootcontext := TroubleshootContext{
+		troubleshootcontext := troubleshoot.TroubleshootContext{
 			Namespace:  testNamespace,
-			pullSecret: *testNewSecretBuilder(testNamespace, testDynakube+pullSecretSuffix).dataAppend("invalidToken", pullSecretFieldValue).build(),
+			pullSecret: *troubleshoot.testNewSecretBuilder(testNamespace, testDynakube+pullSecretSuffix).dataAppend("invalidToken", troubleshoot.pullSecretFieldValue).build(),
 		}
 		secret, err := getPullSecretToken(&troubleshootcontext)
 		require.Errorf(t, err, "expected error")
-		assert.NotEqual(t, pullSecretFieldValue, secret, "valid contents of pull secret")
+		assert.NotEqual(t, troubleshoot.pullSecretFieldValue, secret, "valid contents of pull secret")
 	})
 }

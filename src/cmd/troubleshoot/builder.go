@@ -3,6 +3,7 @@ package troubleshoot
 import (
 	"context"
 	"fmt"
+	"github.com/Dynatrace/dynatrace-operator/src/cmd/troubleshoot/checks"
 	"net/http"
 	"os"
 
@@ -119,7 +120,7 @@ func (builder CommandBuilder) buildRun() func(*cobra.Command, []string) error {
 		err = runChecks(results, &troubleshootCtx, getPrerequisiteChecks(ctx, nil, namespaceFlagValue, apiReader)) // ignore error to avoid polluting pretty logs
 		resetLogger()
 		if err != nil {
-			logErrorf("prerequisite checks failed, aborting")
+			LogErrorf("prerequisite checks failed, aborting")
 			return err
 		}
 
@@ -134,7 +135,7 @@ func (builder CommandBuilder) buildRun() func(*cobra.Command, []string) error {
 func runChecksForAllDynakubes(results ChecksResults, checks []*CheckListEntry, dynakubes []dynatracev1beta1.DynaKube, apiReader client.Reader) {
 	for _, dynakube := range dynakubes {
 		results.checkResultMap = map[*CheckListEntry]Result{}
-		logNewDynakubef(dynakube.Name)
+		LogNewDynakubef(dynakube.Name)
 
 		troubleshootCtx := TroubleshootContext{
 			Context:    context.Background(),
@@ -147,7 +148,7 @@ func runChecksForAllDynakubes(results ChecksResults, checks []*CheckListEntry, d
 		_ = runChecks(results, &troubleshootCtx, checks) // ignore error to avoid polluting pretty logs
 		resetLogger()
 		if !results.hasErrors() {
-			logOkf("'%s' - all checks passed", dynakube.Name)
+			LogOkf("'%s' - all checks passed", dynakube.Name)
 		}
 	}
 }
@@ -155,7 +156,7 @@ func runChecksForAllDynakubes(results ChecksResults, checks []*CheckListEntry, d
 func getPrerequisiteChecks(ctx context.Context, namespace string, apiReader client.Reader) []*CheckListEntry {
 	return []*CheckListEntry{
 		{
-			Check: newNamespaceCheck(ctx, namespace, apiReader),
+			Check: checks.newNamespaceCheck(ctx, namespace, apiReader),
 		},
 		{
 			Name: crdCheckName,
@@ -172,14 +173,14 @@ func getDynakubeSpecificChecks(results ChecksResults) []*CheckListEntry {
 	checkList := map[string]*CheckListEntry{
 		dynakubeCheckName: {
 			Do: func(troubleshootCtx *TroubleshootContext) error {
-				return checkDynakube(results, troubleshootCtx)
+				return checks.checkDynakube(results, troubleshootCtx)
 			},
 		},
 		imagePullableCheckName: {
-			Do: verifyAllImagesAvailable,
+			Do: checks.verifyAllImagesAvailable,
 		},
 		proxySettingsCheckName: {
-			Do: checkProxySettings,
+			Do: checks.checkProxySettings,
 		},
 	}
 
@@ -195,7 +196,7 @@ func getDynakubes(ctx context.Context, apiReader client.Reader, namespace string
 	var dynakubes []dynatracev1beta1.DynaKube
 
 	if dynakubeName == "" {
-		logNewDynakubef("no Dynakube specified - checking all Dynakubes in namespace '%s'", namespace)
+		LogNewDynakubef("no Dynakube specified - checking all Dynakubes in namespace '%s'", namespace)
 		dynakubes, err = getAllDynakubesInNamespace(ctx, apiReader, namespace)
 		if err != nil {
 			return nil, err
@@ -214,13 +215,13 @@ func getAllDynakubesInNamespace(ctx context.Context, apiReader client.Reader, na
 	dynakubes, err := query.List()
 
 	if err != nil {
-		logErrorf("failed to list Dynakubes: %v", err)
+		LogErrorf("failed to list Dynakubes: %v", err)
 		return nil, err
 	}
 
 	if len(dynakubes.Items) == 0 {
 		err = fmt.Errorf("no Dynakubes found in namespace '%s'", namespace)
-		logErrorf(err.Error())
+		LogErrorf(err.Error())
 		return nil, err
 	}
 

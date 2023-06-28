@@ -1,6 +1,7 @@
 package troubleshoot
 
 import (
+	"github.com/Dynatrace/dynatrace-operator/src/cmd/troubleshoot/checks"
 	"testing"
 
 	dynatracev1beta1 "github.com/Dynatrace/dynatrace-operator/src/api/v1beta1"
@@ -23,7 +24,7 @@ func TestTroubleshootCommandBuilder(t *testing.T) {
 		dynakube := buildTestDynakube()
 		clt := fake.NewClient(&dynakube)
 
-		troubleshootCtx := TroubleshootContext{ApiReader: clt, Namespace: testNamespace}
+		troubleshootCtx := TroubleshootContext{ApiReader: clt, Namespace: checks.testNamespace}
 
 		dynakubes, err := getAllDynakubesInNamespace(troubleshootCtx)
 		assert.NoError(t, err)
@@ -35,21 +36,21 @@ func TestTroubleshootCommandBuilder(t *testing.T) {
 		dynakube := buildTestDynakube()
 		troubleshootCtx := TroubleshootContext{
 			dynakube:  dynakube,
-			Namespace: testNamespace,
+			Namespace: checks.testNamespace,
 		}
 
 		dynakubes, err := getDynakubes(troubleshootCtx, dynakube.Name)
 		assert.NoError(t, err)
 		assert.Equal(t, 1, len(dynakubes))
-		assert.Equal(t, testDynakube, dynakubes[0].Name)
+		assert.Equal(t, checks.testDynakube, dynakubes[0].Name)
 	})
 }
 
 func buildTestDynakube() dynatracev1beta1.DynaKube {
 	return dynatracev1beta1.DynaKube{
 		ObjectMeta: metav1.ObjectMeta{
-			Name:      testDynakube,
-			Namespace: testNamespace,
+			Name:      checks.testDynakube,
+			Namespace: checks.testNamespace,
 		},
 	}
 }
