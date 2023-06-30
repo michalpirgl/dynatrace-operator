@@ -1,15 +1,16 @@
-package troubleshoot
+package checks
 
 import (
 	"errors"
+	"github.com/Dynatrace/dynatrace-operator/src/cmd/troubleshoot"
 
 	"github.com/Dynatrace/dynatrace-operator/src/kubeobjects"
 )
 
-func checkOneAgentAPM(ctx *TroubleshootContext) error {
-	log = newTroubleshootLogger("oneAgentAPM")
+func checkOneAgentAPM(ctx *troubleshoot.TroubleshootContext) error {
+	log = troubleshoot.newTroubleshootLogger("oneAgentAPM")
 
-	LogNewCheckf("checking if OneAgentAPM object exists ...")
+	troubleshoot.LogNewCheckf("checking if OneAgentAPM object exists ...")
 	exists, err := kubeobjects.CheckIfOneAgentAPMExists(&ctx.KubeConfig)
 
 	if err != nil {
@@ -20,6 +21,6 @@ func checkOneAgentAPM(ctx *TroubleshootContext) error {
 		return errors.New("OneAgentAPM object still exists - either delete OneAgentAPM objects or fully install the oneAgent operator")
 	}
 
-	LogOkf("OneAgentAPM does not exist")
+	troubleshoot.LogOkf("OneAgentAPM does not exist")
 	return nil
 }

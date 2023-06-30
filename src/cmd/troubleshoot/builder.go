@@ -160,11 +160,11 @@ func getPrerequisiteChecks(ctx context.Context, namespace string, apiReader clie
 		},
 		{
 			Name: crdCheckName,
-			Do:   checkCRD,
+			Do:   checks.checkCRD,
 		},
 		{
 			Name: oneAgentAPMCheckName,
-			Do:   checkOneAgentAPM,
+			Do:   checks.checkOneAgentAPM,
 		},
 	}
 }
