@@ -78,7 +78,7 @@ func TestImagePullable(t *testing.T) {
 		[]string{
 			"/v2/",
 			"/v2/" + testOneAgentImage + "/manifests/" + api.RawTag,
-			"/v2/" + testOneAgentImage + "/manifests/" + testVersion + "-raw",
+			"/v2/" + testOneAgentImage + "/manifests/" + api.RawTag + "-" + testVersion,
 			"/v2/" + testCustomOneAgentImage + "/manifests/" + api.LatestTag,
 			"/v2/" + testCustomOneAgentImage + "/manifests/" + api.RawTag,
 			"/v2/" + testCustomOneAgentImage + "/manifests/" + testVersion,

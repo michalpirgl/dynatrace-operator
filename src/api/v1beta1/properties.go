@@ -392,7 +392,7 @@ func (dk *DynaKube) DefaultOneAgentImage() string {
 	tag := api.RawTag
 	if version := dk.CustomOneAgentVersion(); version != "" {
 		truncatedVersion := truncateBuildDate(version)
-		tag = truncatedVersion + "-" + api.RawTag
+		tag += "-" + truncatedVersion
 	}
 
 	apiUrlHost := dk.ApiUrlHost()
