@@ -13,7 +13,7 @@ import (
 )
 
 func TestNewAccess(t *testing.T) {
-	db, err := NewAccess(context.TODO(), ":memory:")
+	db, err := NewSqliteAccess(context.TODO(), ":memory:")
 	require.NoError(t, err)
 	assert.NotNil(t, db.(*SqliteAccess).conn)
 }

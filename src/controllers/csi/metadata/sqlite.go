@@ -185,8 +185,8 @@ type SqliteAccess struct {
 	conn *sql.DB
 }
 
-// NewAccess creates a new SqliteAccess, connects to the database.
-func NewAccess(ctx context.Context, path string) (Access, error) {
+// NewSqliteAccess creates a new SqliteAccess, connects to the database.
+func NewSqliteAccess(ctx context.Context, path string) (Access, error) {
 	access := SqliteAccess{}
 	err := access.Setup(ctx, path)
 	if err != nil {

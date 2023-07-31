@@ -3,10 +3,13 @@ package metadata
 import (
 	"context"
 	"time"
+
+	"gorm.io/gorm"
 )
 
 // Dynakube stores the necessary info from the Dynakube that is needed to be used during volume mount/unmount.
 type Dynakube struct {
+	gorm.Model
 	Name                   string `json:"name"`
 	TenantUUID             string `json:"tenantUUID"`
 	LatestVersion          string `json:"latestVersion"`
@@ -30,6 +33,7 @@ func NewDynakube(dynakubeName, tenantUUID, latestVersion, imageDigest string, ma
 }
 
 type Volume struct {
+	gorm.Model
 	VolumeID      string `json:"volumeID"`
 	PodName       string `json:"podName"`
 	Version       string `json:"version"`
@@ -57,6 +61,7 @@ func NewVolume(id, podName, version, tenantUUID string, mountAttempts int) *Volu
 }
 
 type OsAgentVolume struct {
+	gorm.Model
 	VolumeID     string     `json:"volumeID"`
 	TenantUUID   string     `json:"tenantUUID"`
 	Mounted      bool       `json:"mounted"`
@@ -68,7 +73,12 @@ func NewOsAgentVolume(volumeID, tenantUUID string, mounted bool, timeStamp *time
 	if volumeID == "" || tenantUUID == "" || timeStamp == nil {
 		return nil
 	}
-	return &OsAgentVolume{volumeID, tenantUUID, mounted, timeStamp}
+	return &OsAgentVolume{
+		VolumeID:     volumeID,
+		TenantUUID:   tenantUUID,
+		Mounted:      mounted,
+		LastModified: timeStamp,
+	}
 }
 
 type Access interface {
