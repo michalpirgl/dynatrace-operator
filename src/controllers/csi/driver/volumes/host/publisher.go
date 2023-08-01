@@ -67,7 +67,7 @@ func (publisher *HostVolumePublisher) PublishVolume(ctx context.Context, volumeC
 
 	timestamp := time.Now()
 	if volume == nil {
-		storage := metadata.OsAgentVolume{
+		storage := metadata.OsagentVolume{
 			VolumeID:     volumeCfg.VolumeID,
 			TenantUUID:   bindCfg.TenantUUID,
 			Mounted:      true,

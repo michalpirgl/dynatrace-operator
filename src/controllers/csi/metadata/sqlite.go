@@ -368,7 +368,7 @@ func (access *SqliteAccess) DeleteVolume(ctx context.Context, volumeID string) e
 }
 
 // InsertOsAgentVolume inserts a new OsAgentVolume
-func (access *SqliteAccess) InsertOsAgentVolume(ctx context.Context, volume *OsAgentVolume) error {
+func (access *SqliteAccess) InsertOsAgentVolume(ctx context.Context, volume *OsagentVolume) error {
 	err := access.executeStatement(ctx, insertOsAgentVolumeStatement, volume.TenantUUID, volume.VolumeID, volume.Mounted, volume.LastModified)
 	if err != nil {
 		err = errors.WithMessagef(err, "couldn't insert osAgentVolume info, volume id '%s', tenant UUID '%s', mounted '%t', last modified '%s'",
@@ -381,7 +381,7 @@ func (access *SqliteAccess) InsertOsAgentVolume(ctx context.Context, volume *OsA
 }
 
 // UpdateOsAgentVolume updates an existing OsAgentVolume by matching the tenantUUID
-func (access *SqliteAccess) UpdateOsAgentVolume(ctx context.Context, volume *OsAgentVolume) error {
+func (access *SqliteAccess) UpdateOsAgentVolume(ctx context.Context, volume *OsagentVolume) error {
 	err := access.executeStatement(ctx, updateOsAgentVolumeStatement, volume.VolumeID, volume.Mounted, volume.LastModified, volume.TenantUUID)
 	if err != nil {
 		err = errors.WithMessagef(err, "couldn't update osAgentVolume info, tenantUUID '%s', mounted '%t', last modified '%s', volume id '%s'",
@@ -394,7 +394,7 @@ func (access *SqliteAccess) UpdateOsAgentVolume(ctx context.Context, volume *OsA
 }
 
 // GetOsAgentVolumeViaVolumeID gets an OsAgentVolume by its VolumeID
-func (access *SqliteAccess) GetOsAgentVolumeViaVolumeID(ctx context.Context, volumeID string) (*OsAgentVolume, error) {
+func (access *SqliteAccess) GetOsAgentVolumeViaVolumeID(ctx context.Context, volumeID string) (*OsagentVolume, error) {
 	var tenantUUID string
 	var mounted bool
 	var lastModified time.Time
@@ -406,7 +406,7 @@ func (access *SqliteAccess) GetOsAgentVolumeViaVolumeID(ctx context.Context, vol
 }
 
 // GetOsAgentVolumeViaTenantUUID gets an OsAgentVolume by its tenantUUID
-func (access *SqliteAccess) GetOsAgentVolumeViaTenantUUID(ctx context.Context, tenantUUID string) (*OsAgentVolume, error) {
+func (access *SqliteAccess) GetOsAgentVolumeViaTenantUUID(ctx context.Context, tenantUUID string) (*OsagentVolume, error) {
 	var volumeID string
 	var mounted bool
 	var lastModified time.Time
@@ -468,12 +468,12 @@ func (access *SqliteAccess) GetAllDynakubes(ctx context.Context) ([]*Dynakube, e
 }
 
 // GetAllOsAgentVolumes gets all the OsAgentVolume from the database
-func (access *SqliteAccess) GetAllOsAgentVolumes(ctx context.Context) ([]*OsAgentVolume, error) {
+func (access *SqliteAccess) GetAllOsAgentVolumes(ctx context.Context) ([]*OsagentVolume, error) {
 	rows, err := access.conn.QueryContext(ctx, getAllOsAgentVolumes)
 	if err != nil {
 		return nil, errors.WithStack(errors.WithMessage(err, "couldn't get all the osagent volumes"))
 	}
-	osVolumes := []*OsAgentVolume{}
+	osVolumes := []*OsagentVolume{}
 	defer func() { _ = rows.Close() }()
 	for rows.Next() {
 		var volumeID string

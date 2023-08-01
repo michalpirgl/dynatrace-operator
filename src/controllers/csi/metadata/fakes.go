@@ -60,19 +60,19 @@ func (f *FakeFailDB) GetAllDynakubes(ctx context.Context) ([]*Dynakube, error) {
 	return nil, sql.ErrTxDone
 }
 
-func (f *FakeFailDB) InsertOsAgentVolume(ctx context.Context, volume *OsAgentVolume) error {
+func (f *FakeFailDB) InsertOsAgentVolume(ctx context.Context, volume *OsagentVolume) error {
 	return sql.ErrTxDone
 }
-func (f *FakeFailDB) GetOsAgentVolumeViaVolumeID(ctx context.Context, volumeID string) (*OsAgentVolume, error) {
+func (f *FakeFailDB) GetOsAgentVolumeViaVolumeID(ctx context.Context, volumeID string) (*OsagentVolume, error) {
 	return nil, sql.ErrTxDone
 }
-func (f *FakeFailDB) GetOsAgentVolumeViaTenantUUID(ctx context.Context, volumeID string) (*OsAgentVolume, error) {
+func (f *FakeFailDB) GetOsAgentVolumeViaTenantUUID(ctx context.Context, volumeID string) (*OsagentVolume, error) {
 	return nil, sql.ErrTxDone
 }
-func (f *FakeFailDB) UpdateOsAgentVolume(ctx context.Context, volume *OsAgentVolume) error {
+func (f *FakeFailDB) UpdateOsAgentVolume(ctx context.Context, volume *OsagentVolume) error {
 	return sql.ErrTxDone
 }
-func (f *FakeFailDB) GetAllOsAgentVolumes(ctx context.Context) ([]*OsAgentVolume, error) {
+func (f *FakeFailDB) GetAllOsAgentVolumes(ctx context.Context) ([]*OsagentVolume, error) {
 	return nil, sql.ErrTxDone
 }
 

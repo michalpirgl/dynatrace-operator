@@ -25,12 +25,14 @@ func NewGormAccess(ctx context.Context, path string) (Access, error) {
 
 // Setup connects to the database and creates the necessary tables if they don't exist
 func (access *GormAccess) Setup(ctx context.Context, path string) error {
-	db, err := gorm.Open(sqlite.Open(path), &gorm.Config{})
+	db, err := gorm.Open(sqlite.Open(path), &gorm.Config{
+		DisableForeignKeyConstraintWhenMigrating: true,
+	})
 	if err != nil {
 		return errors.WithMessage(err, "failed to open db with gorm")
 	}
 	access.db = db
-	return db.WithContext(ctx).AutoMigrate(&Dynakube{}, &Volume{}, &OsAgentVolume{})
+	return db.WithContext(ctx).AutoMigrate(&Dynakube{}, &Volume{}, &OsagentVolume{})
 }
 
 // InsertDynakube inserts a new Dynakube
@@ -45,72 +47,82 @@ func (access *GormAccess) UpdateDynakube(ctx context.Context, dynakube *Dynakube
 
 // DeleteDynakube deletes an existing Dynakube using its name
 func (access *GormAccess) DeleteDynakube(ctx context.Context, dynakubeName string) error {
-	return access.db.WithContext(ctx).Where("name = ?", dynakubeName).Delete(&Dynakube{}).Error
+	return access.db.WithContext(ctx).Where("Name = ?", dynakubeName).Delete(&Dynakube{}).Error
 }
 
 // GetDynakube gets Dynakube using its name
 func (access *GormAccess) GetDynakube(ctx context.Context, dynakubeName string) (*Dynakube, error) {
-	var dynakube *Dynakube
-	return dynakube, access.db.WithContext(ctx).Where("name = ?", dynakubeName).Take(dynakube).Error
+	var dynakube Dynakube
+	err := access.db.WithContext(ctx).Where("Name = ?", dynakubeName).Take(&dynakube).Error
+	if errors.Is(err, gorm.ErrRecordNotFound) {
+		return nil, nil
+	}
+	return &dynakube, err
 }
 
 // InsertVolume inserts a new Volume
 func (access *GormAccess) InsertVolume(ctx context.Context, volume *Volume) error {
-	return access.db.WithContext(ctx).Create(volume).Error //could also be just .Save
+	return access.db.WithContext(ctx).Save(volume).Error
 }
 
 // GetVolume gets Volume by its ID
 func (access *GormAccess) GetVolume(ctx context.Context, volumeID string) (*Volume, error) {
-	var volume *Volume
-	return volume, access.db.WithContext(ctx).Where("volumeID = ?", volumeID).Take(volume).Error
+	var volume Volume
+	err := access.db.WithContext(ctx).Where("ID = ?", volumeID).Take(&volume).Error
+	if errors.Is(err, gorm.ErrRecordNotFound) {
+		return nil, nil
+	}
+	return &volume, err
 }
 
 // DeleteVolume deletes a Volume by its ID
 func (access *GormAccess) DeleteVolume(ctx context.Context, volumeID string) error {
-	return access.db.WithContext(ctx).Where("volumeID = ?", volumeID).Delete(&Volume{}).Error
+	return access.db.WithContext(ctx).Where("ID = ?", volumeID).Delete(&Volume{}).Error
 }
 
 // InsertOsAgentVolume inserts a new OsAgentVolume
-func (access *GormAccess) InsertOsAgentVolume(ctx context.Context, volume *OsAgentVolume) error {
+func (access *GormAccess) InsertOsAgentVolume(ctx context.Context, volume *OsagentVolume) error {
 	return access.db.WithContext(ctx).Create(volume).Error //could also be just .Save
 }
 
 // UpdateOsAgentVolume updates an existing OsAgentVolume by matching the tenantUUID
-func (access *GormAccess) UpdateOsAgentVolume(ctx context.Context, volume *OsAgentVolume) error {
+func (access *GormAccess) UpdateOsAgentVolume(ctx context.Context, volume *OsagentVolume) error {
 	return access.db.WithContext(ctx).Save(volume).Error
 }
 
 // GetOsAgentVolumeViaVolumeID gets an OsAgentVolume by its VolumeID
-func (access *GormAccess) GetOsAgentVolumeViaVolumeID(ctx context.Context, volumeID string) (*OsAgentVolume, error) {
-	var volume *OsAgentVolume
-	return volume, access.db.WithContext(ctx).Where("volumeID = ?", volumeID).Take(volume).Error
+func (access *GormAccess) GetOsAgentVolumeViaVolumeID(ctx context.Context, volumeID string) (*OsagentVolume, error) {
+	var volume OsagentVolume
+	err := access.db.WithContext(ctx).Where("VolumeID = ?", volumeID).Take(&volume).Error
+	return &volume, err
 }
 
 // GetOsAgentVolumeViaTenantUUID gets an OsAgentVolume by its tenantUUID
-func (access *GormAccess) GetOsAgentVolumeViaTenantUUID(ctx context.Context, tenantUUID string) (*OsAgentVolume, error) {
-	var volume *OsAgentVolume
-	return volume, access.db.WithContext(ctx).Where("tenantUUID  = ?", tenantUUID).Take(volume).Error
+func (access *GormAccess) GetOsAgentVolumeViaTenantUUID(ctx context.Context, tenantUUID string) (*OsagentVolume, error) {
+	var volume OsagentVolume
+	err := access.db.WithContext(ctx).Where("TenantUUID = ?", tenantUUID).Take(&volume).Error
+	return &volume, err
 }
 
 // GetAllVolumes gets all the Volumes from the database
 func (access *GormAccess) GetAllVolumes(ctx context.Context) ([]*Volume, error) {
 	var volumes []*Volume
 
-	return volumes, access.db.WithContext(ctx).Find(volumes).Error
+	return volumes, access.db.WithContext(ctx).Find(&volumes).Error
 }
 
 // GetAllDynakubes gets all the Dynakubes from the database
 func (access *GormAccess) GetAllDynakubes(ctx context.Context) ([]*Dynakube, error) {
 	var dynakubes []*Dynakube
 
-	return dynakubes, access.db.WithContext(ctx).Find(dynakubes).Error
+	return dynakubes, access.db.WithContext(ctx).Find(&dynakubes).Error
 }
 
 // GetAllOsAgentVolumes gets all the OsAgentVolume from the database
-func (access *GormAccess) GetAllOsAgentVolumes(ctx context.Context) ([]*OsAgentVolume, error) {
-	var osVolumes []*OsAgentVolume
+func (access *GormAccess) GetAllOsAgentVolumes(ctx context.Context) ([]*OsagentVolume, error) {
+	var osVolumes []*OsagentVolume
 
-	return osVolumes, access.db.WithContext(ctx).Find(osVolumes).Error
+	return osVolumes, access.db.WithContext(ctx).Find(&osVolumes).Error
 }
 
 // GetUsedVersions gets all UNIQUE versions present in the `volumes` for a given tenantUUID database in map.
@@ -118,8 +130,8 @@ func (access *GormAccess) GetAllOsAgentVolumes(ctx context.Context) ([]*OsAgentV
 // it's also easier to check if a version is in it or not. (a Set in style of Golang)
 func (access *GormAccess) GetUsedVersions(ctx context.Context, tenantUUID string) (map[string]bool, error) {
 	// TODO: Maybe less "brute force"?
-	var volumes []*Volume
-	if err := access.db.WithContext(ctx).Where("tenantUUID = ?", tenantUUID).Find(volumes).Error ;err != nil {
+	var volumes []Volume
+	if err := access.db.WithContext(ctx).Where("TenantUUID = ?", tenantUUID).Find(&volumes).Error; err != nil {
 		return nil, err
 	}
 	versions := map[string]bool{}
@@ -134,7 +146,7 @@ func (access *GormAccess) GetUsedVersions(ctx context.Context, tenantUUID string
 // it's also easier to check if a version is in it or not. (a Set in style of Golang)
 func (access *GormAccess) GetAllUsedVersions(ctx context.Context) (map[string]bool, error) {
 	// TODO: Maybe less "brute force" ?
-	volumes , err := access.GetAllVolumes(ctx)
+	volumes, err := access.GetAllVolumes(ctx)
 	if err != nil {
 		return nil, err
 	}
@@ -180,7 +192,7 @@ func (access *GormAccess) GetUsedImageDigests(ctx context.Context) (map[string]b
 // IsImageDigestUsed checks if the specified image digest is present in the database.
 func (access *GormAccess) IsImageDigestUsed(ctx context.Context, imageDigest string) (bool, error) {
 	var count int64
-	err := access.db.WithContext(ctx).Where("imageDigest = ?", imageDigest).Find(&Dynakube{}).Count(&count).Error
+	err := access.db.WithContext(ctx).Where("ImageDigest = ?", imageDigest).Find(&Dynakube{}).Count(&count).Error
 	return count > 0, err
 }
 
@@ -209,7 +221,7 @@ func (access *GormAccess) GetTenantsToDynakubes(ctx context.Context) (map[string
 		return nil, errors.WithStack(errors.WithMessage(err, "couldn't get all tenants to dynakube metadata"))
 	}
 	dynakubesMap := map[string]string{}
-	for _, dynakube := range dynakubes{
+	for _, dynakube := range dynakubes {
 		dynakubesMap[dynakube.Name] = dynakube.TenantUUID
 	}
 	return nil, nil

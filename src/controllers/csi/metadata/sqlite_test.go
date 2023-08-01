@@ -271,13 +271,13 @@ func TestGetAllOsAgentVolumes(t *testing.T) {
 	testDynakube2 := createTestDynakube(2)
 
 	now := time.Now()
-	osVolume1 := OsAgentVolume{
+	osVolume1 := OsagentVolume{
 		VolumeID:     "vol-1",
 		TenantUUID:   testDynakube1.TenantUUID,
 		Mounted:      true,
 		LastModified: &now,
 	}
-	osVolume2 := OsAgentVolume{
+	osVolume2 := OsagentVolume{
 		VolumeID:     "vol-2",
 		TenantUUID:   testDynakube2.TenantUUID,
 		Mounted:      true,
@@ -365,7 +365,7 @@ func TestInsertOsAgentVolume(t *testing.T) {
 	db := FakeMemoryDB()
 
 	now := time.Now()
-	volume := OsAgentVolume{
+	volume := OsagentVolume{
 		VolumeID:     "vol-4",
 		TenantUUID:   testDynakube1.TenantUUID,
 		Mounted:      true,
@@ -393,7 +393,7 @@ func TestGetOsAgentVolumeViaVolumeID(t *testing.T) {
 	db := FakeMemoryDB()
 
 	now := time.Now()
-	expected := OsAgentVolume{
+	expected := OsagentVolume{
 		VolumeID:     "vol-4",
 		TenantUUID:   testDynakube1.TenantUUID,
 		Mounted:      true,
@@ -417,7 +417,7 @@ func TestGetOsAgentVolumeViaTennatUUID(t *testing.T) {
 	db := FakeMemoryDB()
 
 	now := time.Now()
-	expected := OsAgentVolume{
+	expected := OsagentVolume{
 		VolumeID:     "vol-4",
 		TenantUUID:   testDynakube1.TenantUUID,
 		Mounted:      true,
@@ -440,7 +440,7 @@ func TestUpdateOsAgentVolume(t *testing.T) {
 	db := FakeMemoryDB()
 
 	now := time.Now()
-	old := OsAgentVolume{
+	old := OsagentVolume{
 		VolumeID:     "vol-4",
 		TenantUUID:   testDynakube1.TenantUUID,
 		Mounted:      true,

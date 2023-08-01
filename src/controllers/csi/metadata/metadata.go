@@ -3,18 +3,15 @@ package metadata
 import (
 	"context"
 	"time"
-
-	"gorm.io/gorm"
 )
 
 // Dynakube stores the necessary info from the Dynakube that is needed to be used during volume mount/unmount.
 type Dynakube struct {
-	gorm.Model
-	Name                   string `json:"name"`
-	TenantUUID             string `json:"tenantUUID"`
-	LatestVersion          string `json:"latestVersion"`
-	ImageDigest            string `json:"imageDigest"`
-	MaxFailedMountAttempts int    `json:"maxFailedMountAttempts"`
+	Name                   string `json:"name" gorm:"column:Name;primaryKey;type:VARCHAR NOT NULL"`
+	TenantUUID             string `json:"tenantUUID" gorm:"column:TenantUUID;type:VARCHAR NOT NULL"`
+	LatestVersion          string `json:"latestVersion" gorm:"column:LatestVersion;type:VARCHAR NOT NULL"`
+	ImageDigest            string `json:"imageDigest" gorm:"column:ImageDigest;type:VARCHAR NOT NULL DEFAULT ''"`
+	MaxFailedMountAttempts int    `json:"maxFailedMountAttempts" gorm:"column:MaxFailedMountAttempts;type:VARCHAR NOT NULL;default:10"`
 }
 
 // NewDynakube returns a new metadata.Dynakube if all fields are set.
@@ -33,12 +30,11 @@ func NewDynakube(dynakubeName, tenantUUID, latestVersion, imageDigest string, ma
 }
 
 type Volume struct {
-	gorm.Model
-	VolumeID      string `json:"volumeID"`
-	PodName       string `json:"podName"`
-	Version       string `json:"version"`
-	TenantUUID    string `json:"tenantUUID"`
-	MountAttempts int    `json:"mountAttempts"`
+	VolumeID      string `json:"volumeID" gorm:"column:ID;primaryKey;type:VARCHAR NOT NULL"`
+	PodName       string `json:"podName" gorm:"column:PodName;type:VARCHAR NOT NULL"`
+	Version       string `json:"version" gorm:"column:Version;type:VARCHAR NOT NULL"`
+	TenantUUID    string `json:"tenantUUID" gorm:"column:TenantUUID;type:VARCHAR NOT NULL"`
+	MountAttempts int    `json:"mountAttempts" gorm:"column:MountAttempts;type:VARCHAR NOT NULL;default:0"`
 }
 
 // NewVolume returns a new Volume if all fields (except version) are set.
@@ -60,20 +56,19 @@ func NewVolume(id, podName, version, tenantUUID string, mountAttempts int) *Volu
 	}
 }
 
-type OsAgentVolume struct {
-	gorm.Model
-	VolumeID     string     `json:"volumeID"`
-	TenantUUID   string     `json:"tenantUUID"`
-	Mounted      bool       `json:"mounted"`
-	LastModified *time.Time `json:"lastModified"`
+type OsagentVolume struct {
+	VolumeID     string     `json:"volumeID" gorm:"column:VolumeID;type:VARCHAR NOT NULL"`
+	TenantUUID   string     `json:"tenantUUID" gorm:"column:TenantUUID;primaryKey;type:VARCHAR NOT NULL"`
+	Mounted      bool       `json:"mounted" gorm:"column:Mounted;type:BOOLEAN NOT NULL"`
+	LastModified *time.Time `json:"lastModified" gorm:"column:LastModified;type:DATETIME NOT NULL"`
 }
 
 // NewOsAgentVolume returns a new volume if all fields are set.
-func NewOsAgentVolume(volumeID, tenantUUID string, mounted bool, timeStamp *time.Time) *OsAgentVolume {
+func NewOsAgentVolume(volumeID, tenantUUID string, mounted bool, timeStamp *time.Time) *OsagentVolume {
 	if volumeID == "" || tenantUUID == "" || timeStamp == nil {
 		return nil
 	}
-	return &OsAgentVolume{
+	return &OsagentVolume{
 		VolumeID:     volumeID,
 		TenantUUID:   tenantUUID,
 		Mounted:      mounted,
@@ -91,11 +86,11 @@ type Access interface {
 	GetTenantsToDynakubes(ctx context.Context) (map[string]string, error)
 	GetAllDynakubes(ctx context.Context) ([]*Dynakube, error)
 
-	InsertOsAgentVolume(ctx context.Context, volume *OsAgentVolume) error
-	GetOsAgentVolumeViaVolumeID(ctx context.Context, volumeID string) (*OsAgentVolume, error)
-	GetOsAgentVolumeViaTenantUUID(ctx context.Context, volumeID string) (*OsAgentVolume, error)
-	UpdateOsAgentVolume(ctx context.Context, volume *OsAgentVolume) error
-	GetAllOsAgentVolumes(ctx context.Context) ([]*OsAgentVolume, error)
+	InsertOsAgentVolume(ctx context.Context, volume *OsagentVolume) error
+	GetOsAgentVolumeViaVolumeID(ctx context.Context, volumeID string) (*OsagentVolume, error)
+	GetOsAgentVolumeViaTenantUUID(ctx context.Context, volumeID string) (*OsagentVolume, error)
+	UpdateOsAgentVolume(ctx context.Context, volume *OsagentVolume) error
+	GetAllOsAgentVolumes(ctx context.Context) ([]*OsagentVolume, error)
 
 	InsertVolume(ctx context.Context, volume *Volume) error
 	DeleteVolume(ctx context.Context, volumeID string) error
@@ -112,7 +107,7 @@ type Access interface {
 type AccessOverview struct {
 	Volumes        []*Volume        `json:"volumes"`
 	Dynakubes      []*Dynakube      `json:"dynakubes"`
-	OsAgentVolumes []*OsAgentVolume `json:"osAgentVolumes"`
+	OsAgentVolumes []*OsagentVolume `json:"osAgentVolumes"`
 }
 
 func NewAccessOverview(access Access) (*AccessOverview, error) {
