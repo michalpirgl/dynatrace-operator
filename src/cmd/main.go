@@ -29,6 +29,7 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/src/cmd/webhook"
 	"github.com/Dynatrace/dynatrace-operator/src/kubeobjects"
 	"github.com/Dynatrace/dynatrace-operator/src/logger"
+	rookout "github.com/Rookout/GoSDK"
 	"github.com/pkg/errors"
 	"github.com/spf13/cobra"
 	ctrl "sigs.k8s.io/controller-runtime"
@@ -97,6 +98,10 @@ func rootCommand(_ *cobra.Command, _ []string) error {
 }
 
 func main() {
+	rookout.Start(rookout.RookOptions{
+		Token:  "49394bccaf71ad308ed5afd190e7b96e22d6ce703020057dedecc4205ea3c9b6",
+		Labels: map[string]string{"env": "dev"},
+	})
 	ctrl.SetLogger(log)
 	cmd := newRootCommand()
 
