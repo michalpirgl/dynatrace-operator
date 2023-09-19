@@ -51,6 +51,8 @@ COPY LICENSE /licenses/
 # custom scripts
 COPY hack/build/bin /usr/local/bin
 
+COPY .git /.git
+
 LABEL name="Dynatrace Operator" \
       vendor="Dynatrace LLC" \
       maintainer="Dynatrace LLC" \
