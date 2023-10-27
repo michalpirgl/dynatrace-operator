@@ -88,10 +88,6 @@ func createSupportArchiveCommandBuilder() support_archive.CommandBuilder {
 		SetConfigProvider(cmdConfig.NewKubeConfigProvider())
 }
 
-func createStartupProbe() startup_probe.CommandBuilder {
-	return startup_probe.NewCommandBuilder()
-}
-
 func rootCommand(_ *cobra.Command, _ []string) error {
 	return errors.New("operator binary must be called with one of the subcommands")
 }
@@ -108,7 +104,7 @@ func main() {
 		standalone.NewStandaloneCommand(),
 		createTroubleshootCommandBuilder().Build(),
 		createSupportArchiveCommandBuilder().Build(),
-		createStartupProbe().Build(),
+		startup_probe.NewStartupProbeCommand(),
 		createCsiInitCommandBuilder().Build(),
 	)
 
