@@ -110,6 +110,18 @@ func WithSecurityContext(securityContext corev1.PodSecurityContext) Option {
 	}
 }
 
+func WithTolerations(tolerations []corev1.Toleration) Option {
+	return func(app *App) {
+		app.base.Spec.Tolerations = tolerations
+	}
+}
+
+func WithNodeSelector(nodeSelector map[string]string) Option {
+	return func(app *App) {
+		app.base.Spec.NodeSelector = nodeSelector
+	}
+}
+
 func (app *App) Name() string {
 	return app.base.Name
 }

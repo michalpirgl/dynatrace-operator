@@ -198,7 +198,7 @@ func (g *InitGenerator) getHostMonitoringNodes(dk *dynatracev1beta1.DynaKube) (m
 	if !dk.CloudNativeFullstackMode() {
 		return imNodes, nil
 	}
-
+	log.Info("getHostMonitoringNodes", "g.canWatchNodes", g.canWatchNodes)
 	if g.canWatchNodes {
 		var err error
 		imNodes, err = g.calculateImNodes(dk, tenantUUID)
@@ -208,6 +208,7 @@ func (g *InitGenerator) getHostMonitoringNodes(dk *dynatracev1beta1.DynaKube) (m
 	} else {
 		updateImNodes(dk, tenantUUID, imNodes)
 	}
+	log.Info("getHostMonitoringNodes", "g.canWatchNodes", g.canWatchNodes, "imNodes", imNodes)
 	return imNodes, nil
 }
 
@@ -222,24 +223,36 @@ func (g *InitGenerator) calculateImNodes(dk *dynatracev1beta1.DynaKube, tenantUU
 }
 
 func updateImNodes(dk *dynatracev1beta1.DynaKube, tenantUUID string, imNodes map[string]string) {
+	log.Info("updateImNodes")
 	for nodeName := range dk.Status.OneAgent.Instances {
 		if tenantUUID != "" {
+			log.Info("updateImNodes", "nodeName", nodeName, "tenantUUID", tenantUUID)
 			imNodes[nodeName] = tenantUUID
 		} else if !dk.FeatureIgnoreUnknownState() {
+			log.Info("updateImNodes delete", "nodeName", nodeName)
 			delete(imNodes, nodeName)
+		} else {
+			log.Info("updateImNodes nothing", "nodeName", nodeName)
 		}
 	}
 }
 
 func updateNodeInfImNodes(dk *dynatracev1beta1.DynaKube, nodeInf nodeInfo, nodeSelector labels.Selector, tenantUUID string) {
+	log.Info("updateNodeInfImNodes")
 	for _, node := range nodeInf.nodes {
 		nodeLabels := labels.Set(node.Labels)
 		if nodeSelector.Matches(nodeLabels) {
 			if tenantUUID != "" {
+				log.Info("updateNodeInfImNodes", "nodeName", node.Name, "tenantUUID", tenantUUID)
 				nodeInf.imNodes[node.Name] = tenantUUID
 			} else if !dk.FeatureIgnoreUnknownState() {
+				log.Info("updateNodeInfImNodes delete", "nodeName", node.Name)
 				delete(nodeInf.imNodes, node.Name)
+			} else {
+				log.Info("updateNodeInfImNodes nothing", "nodeName", node.Name)
 			}
+		} else {
+			log.Info("updateNodeInfImNodes doesn't match", "nodeName", node.Name)
 		}
 	}
 }
@@ -253,6 +266,7 @@ func (g *InitGenerator) initIMNodes() (nodeInfo, error) {
 	for _, node := range nodeList.Items {
 		imNodes[node.Name] = consts.AgentNoHostTenant
 	}
+	log.Info("initIMNodes", "nodeInfo", imNodes)
 	return nodeInfo{nodeList.Items, imNodes}, nil
 }
 

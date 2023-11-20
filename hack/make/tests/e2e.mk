@@ -72,6 +72,9 @@ test/e2e/cloudnative/proxy: manifests/crd/helm
 test/e2e/cloudnative/publicregistry: manifests/crd/helm
 	go test -v -tags "$(shell ./hack/build/create_go_build_tags.sh true)" -timeout 20m -count=1  ./test/scenarios/standard -args --labels "name=cloudnative-public-registry" $(SKIPCLEANUP)
 
+test/e2e/cloudnative/injection-failure-policy: manifests/crd/helm
+	go test -v -tags "$(shell ./hack/build/create_go_build_tags.sh true)" -timeout 20m -count=1  ./test/scenarios/standard -args --labels "name=cloudnative-injection-failure-policy-force" $(SKIPCLEANUP)
+
 ## Runs Classic/CloudNative mode switching tests
 test/e2e/cloudnative/switchmodes: manifests/crd/helm
 	go test -v -tags "$(shell ./hack/build/create_go_build_tags.sh true)" -timeout 20m -count=1  ./test/scenarios/standard -args --labels "name=cloudnative-to-classic" $(SKIPCLEANUP)

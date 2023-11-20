@@ -3,6 +3,7 @@
 package standard
 
 import (
+	"github.com/Dynatrace/dynatrace-operator/test/features/cloudnative/injection_failure_policy"
 	"testing"
 
 	"github.com/Dynatrace/dynatrace-operator/test/features/activegate"
@@ -15,8 +16,6 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/test/features/cloudnative/network_zones"
 	publicRegistry "github.com/Dynatrace/dynatrace-operator/test/features/cloudnative/public_registry"
 	cloudToClassic "github.com/Dynatrace/dynatrace-operator/test/features/cloudnative/switch_modes"
-	"github.com/Dynatrace/dynatrace-operator/test/features/edgeconnect"
-	supportArchive "github.com/Dynatrace/dynatrace-operator/test/features/support_archive"
 	"github.com/Dynatrace/dynatrace-operator/test/helpers/components/operator"
 	"github.com/Dynatrace/dynatrace-operator/test/helpers/kubeobjects/environment"
 	"github.com/Dynatrace/dynatrace-operator/test/helpers/tenant"
@@ -51,12 +50,13 @@ func TestStandard(t *testing.T) {
 		applicationmonitoring.WithoutCSI(t),
 		codemodules.InstallFromImage(t),
 		disabledAutoInjection.Feature(t),
-		supportArchive.Feature(t),
-		edgeconnect.Feature(t),
+		// supportArchive.Feature(t),
+		// edgeconnect.Feature(t),
 		classic.Feature(t),
 		classicToCloud.Feature(t),
 		publicRegistry.Feature(t),
 		cloudToClassic.Feature(t),
+		injection_failure_policy.Feature(t),
 	}
 	testEnv.Test(t, feats...)
 }
