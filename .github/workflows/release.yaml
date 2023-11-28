@@ -40,7 +40,7 @@ jobs:
     needs: [prepare]
     strategy:
       matrix:
-        platform: [amd64, arm64, ppc64le]
+        platform: [amd64]
     steps:
       - name: Checkout
         uses: actions/checkout@b4ffde65f46336ab88eb53be808477a3936bae11 # v4.1.1
@@ -60,19 +60,9 @@ jobs:
       id-token: write
     strategy:
       matrix:
-        platform: [amd64, arm64, ppc64le]
+        platform: [amd64]
         registry: [amazon-ecr]
         include:
-        - registry: gcr
-          url: gcr.io
-          repository: GCR_REPOSITORY
-          username: GCR_USERNAME
-          password: GCR_JSON_KEY
-        - registry: dockerhub
-          url: docker.io
-          repository: DOCKERHUB_REPOSITORY
-          username: DOCKERHUB_USERNAME
-          password: DOCKERHUB_PASSWORD
         - registry: amazon-ecr
           url: public.ecr.aws
           repository: ECR_REPOSITORY
@@ -129,16 +119,6 @@ jobs:
       matrix:
         registry: [amazon-ecr]
         include:
-          - registry: gcr
-            url: gcr.io
-            repository: GCR_REPOSITORY
-            username: GCR_USERNAME
-            password: GCR_JSON_KEY
-          - registry: dockerhub
-            url: docker.io
-            repository: DOCKERHUB_REPOSITORY
-            username: DOCKERHUB_USERNAME
-            password: DOCKERHUB_PASSWORD
           - registry: amazon-ecr
             url: public.ecr.aws
             repository: ECR_REPOSITORY
@@ -194,16 +174,6 @@ jobs:
       matrix:
         registry: [amazon-ecr]
         include:
-          - registry: gcr
-            url: gcr.io
-            repository: GCR_REPOSITORY
-            username: GCR_USERNAME
-            password: GCR_JSON_KEY
-          - registry: dockerhub
-            url: docker.io
-            repository: DOCKERHUB_REPOSITORY
-            username: DOCKERHUB_USERNAME
-            password: DOCKERHUB_PASSWORD
           - registry: amazon-ecr
             url: public.ecr.aws
             repository: ECR_REPOSITORY
