@@ -61,7 +61,7 @@ jobs:
     strategy:
       matrix:
         platform: [amd64, arm64, ppc64le]
-        registry: [gcr, dockerhub, amazon-ecr]
+        registry: [amazon-ecr]
         include:
         - registry: gcr
           url: gcr.io
@@ -118,42 +118,6 @@ jobs:
           signing-key: ${{ secrets.COSIGN_PRIVATE_KEY }}
           signing-password: ${{ secrets.COSIGN_PASSWORD }}
 
-  push-rhcc:
-    name: Push amd64 image to RHCC
-    if: ${{ !contains(github.ref, '-rc') }}
-    environment: Release
-    needs: [prepare, build]
-    runs-on: ubuntu-latest
-    env:
-      SCAN_REGISTRY: "quay.io"
-    steps:
-      - name: Checkout
-        uses: actions/checkout@b4ffde65f46336ab88eb53be808477a3936bae11 # v4.1.1
-      - name: Login to Registry
-        uses: docker/login-action@343f7c4344506bcbf9b4de18042ae17996df046d # v3.0.0
-        with:
-          registry: ${{ env.SCAN_REGISTRY }}
-          username: ${{ secrets.RHCC_USERNAME }}
-          password: ${{ secrets.RHCC_PASSWORD }}
-      - name: Push amd64 image to scan registry
-        uses: ./.github/actions/upload-image
-        with:
-          platform: "amd64"
-          labels: ${{ needs.prepare.outputs.labels }}
-          version: ${{ needs.prepare.outputs.version }}
-          registry: ${{ env.SCAN_REGISTRY }}
-          repository: ${{ secrets.RHCC_REPOSITORY }}
-          skip-platform-suffix: true
-      - name: Run preflight
-        uses: ./.github/actions/preflight
-        with:
-          version: ${{ needs.prepare.outputs.version }}
-          registry: ${{ env.SCAN_REGISTRY }}
-          repository: ${{ secrets.RHCC_REPOSITORY }}
-          report-name: "preflight.json"
-          redhat-project-id: ${{ secrets.REDHAT_PROJECT_ID }}
-          pyxis-api-token: ${{ secrets.PYXIS_API_TOKEN }}
-
   manifest:
     name: Create Docker manifests
     environment: Release
@@ -163,7 +127,7 @@ jobs:
       id-token: write
     strategy:
       matrix:
-        registry: [gcr, dockerhub, amazon-ecr]
+        registry: [amazon-ecr]
         include:
           - registry: gcr
             url: gcr.io
@@ -228,7 +192,7 @@ jobs:
       id-token: write
     strategy:
       matrix:
-        registry: [gcr, dockerhub, amazon-ecr]
+        registry: [amazon-ecr]
         include:
           - registry: gcr
             url: gcr.io
@@ -285,151 +249,3 @@ jobs:
           sbom: 'result.json'
           signing-key: ${{ secrets.COSIGN_PRIVATE_KEY }}
           signing-password: ${{ secrets.COSIGN_PASSWORD }}
-
-  release:
-    name: Create release
-    needs: [prepare, build, attach-sbom]
-    environment: Release
-    permissions:
-      contents: write
-      pull-requests: write
-      id-token: write
-    runs-on: ubuntu-latest
-    steps:
-      - name: Checkout code
-        uses: actions/checkout@b4ffde65f46336ab88eb53be808477a3936bae11 # v4.1.1
-      - name: Setup Golang
-        uses: actions/setup-go@93397bea11091df50f3d7e59dc26a7711a8bcfbe # v4.1.0
-        with:
-          go-version-file: "${{ github.workspace }}/go.mod"
-      - name: Download dependencies
-        id: depdownload
-        run: |
-          hack/build/ci/install-cgo-dependencies.sh
-      - name: Generate release notes
-        shell: bash
-        env:
-          PRE_RELEASE: ${{ contains(github.ref, '-rc.') }}
-        run: |
-          hack/build/ci/generate-release-notes.sh
-      - name: Generate K8s manifests
-        shell: bash
-        env:
-          VERSION_WITHOUT_PREFIX: ${{ needs.prepare.outputs.version_without_prefix }}
-          VERSION: ${{ needs.prepare.outputs.version }}
-        run: |
-          make manifests/crd/release CHART_VERSION="${VERSION_WITHOUT_PREFIX}"
-
-          make manifests/kubernetes IMAGE="docker.io/dynatrace/dynatrace-operator" TAG="${VERSION}"
-          make manifests/openshift IMAGE="registry.connect.redhat.com/dynatrace/dynatrace-operator" TAG="${VERSION}"
-      - name: Rename manifests if pre-release
-        if: ${{ contains(github.ref, '-rc.') }}
-        run: |
-          mv config/deploy/kubernetes/kubernetes-all.yaml config/deploy/kubernetes/kubernetes.yaml
-          mv config/deploy/openshift/openshift-all.yaml config/deploy/openshift/openshift.yaml
-      - name: Build helm packages
-        uses: ./.github/actions/build-helm
-        with:
-          version_without_prefix: ${{ needs.prepare.outputs.version_without_prefix }}
-          github-token: ${{ secrets.GITHUB_TOKEN }}
-          secring: ${{ secrets.HELM_SECRING }}
-          passphrase: ${{ secrets.HELM_PASSPHRASE }}
-          output-dir: "./helm-pkg"
-      - name: Upload and sign helm package to dockerhub
-        uses: ./.github/actions/upload-helm
-        with:
-          registry-username: ${{ secrets.DOCKERHUB_USERNAME }}
-          registry-password: ${{ secrets.DOCKERHUB_PASSWORD }}
-          version: ${{ needs.prepare.outputs.version }}
-          version-without-prefix: ${{ needs.prepare.outputs.version_without_prefix }}
-          cosign-private-key: ${{ secrets.COSIGN_PRIVATE_KEY }}
-          cosign-password: ${{ secrets.COSIGN_PASSWORD }}
-      - name: Prepare cosign.pub artifact
-        env:
-          COSIGN_PUBLIC_KEY: ${{ secrets.COSIGN_PUBLIC_KEY }}
-        run: |
-          mkdir -p tmp
-          echo ${COSIGN_PUBLIC_KEY} > tmp/cosign.pub
-      - name: Create pre-release
-        uses: softprops/action-gh-release@v1
-        if: ${{ contains(github.ref, '-rc.') }}
-        with:
-          body_path: ./CHANGELOG.md
-          files: |
-            tmp/cosign.pub
-            config/deploy/dynatrace-operator-crd.yaml
-            config/deploy/kubernetes/kubernetes.yaml
-            config/deploy/openshift/openshift.yaml
-          token: ${{ secrets.GITHUB_TOKEN }}
-          prerelease: true
-          draft: true
-          fail_on_unmatched_files: true
-      - name: Create release
-        uses: softprops/action-gh-release@v1
-        if: ${{ !contains(github.ref, '-rc.') }}
-        with:
-          body_path: ./CHANGELOG.md
-          files: |
-            tmp/cosign.pub
-            config/deploy/dynatrace-operator-crd.yaml
-            config/deploy/kubernetes/kubernetes.yaml
-            config/deploy/kubernetes/kubernetes-csi.yaml
-            config/deploy/kubernetes/gke-autopilot.yaml
-            config/deploy/openshift/openshift.yaml
-            config/deploy/openshift/openshift-csi.yaml
-            helm-pkg/dynatrace-operator-${{ needs.prepare.outputs.version_without_prefix }}.tgz
-            helm-pkg/dynatrace-operator-${{ needs.prepare.outputs.version_without_prefix }}.tgz.prov
-          token: ${{ secrets.GITHUB_TOKEN }}
-          prerelease: false
-          draft: true
-          fail_on_unmatched_files: true
-      - name: Update index helm file
-        if: ${{ !contains(github.ref, '-rc.') }}
-        env:
-          VERSION_WITHOUT_PREFIX: ${{ needs.prepare.outputs.version_without_prefix }}
-        run: |
-          echo "Updating Helm repo index"
-          hack/build/ci/generate-new-helm-index-yaml.sh "helm-pkg" ${{ needs.prepare.outputs.version_without_prefix }}
-      - name: Create pull request for adding helm index to main branch
-        if: ${{ !contains(github.ref, '-rc.') }}
-        uses: peter-evans/create-pull-request@v5
-        with:
-          base: main
-          delete-branch: true
-          branch: create-pull-request/update-helm-index
-          branch-suffix: short-commit-hash
-          add-paths: |
-            ./config/helm/repos/stable/index.yaml
-            ./config/helm/repos/stable/index.yaml.previous
-          title: '[Automatic] Update index for ${{ github.ref }} release'
-          commit-message: Update index.yaml
-          committer: GitHub <noreply@github.com>
-          author: ${{ github.actor }} <${{ github.actor }}@users.noreply.github.com>
-          body: |
-            # Description
-            Upgrade `index.yaml` to include latest version of the helm chart.
-            ## How can this be tested?
-            Helm upgrade to and install of `${{ github.ref }}` works.
-            ## Checklist
-            - [x] PR is labeled accordingly
-  snyk:
-    name: Push tag to snyk
-    environment: Release
-    needs: [prepare, push]
-    runs-on: ubuntu-latest
-    permissions:
-      id-token: write
-
-    steps:
-      - name: Push tag to snyk
-        id: push-to-snyk
-        uses: fjogeleit/http-request-action@v1
-        with:
-          url: 'https://api.snyk.io/v1/org/${{ secrets.SNYK_ORGANIZATION_ID }}/integrations/${{ secrets.SNYK_INTEGRATION_ID }}/import'
-          method: 'POST'
-          customHeaders: '{ "Content-Type": "application/json;charset=utf-8", "Authorization": "token ${{ secrets.SNYK_API_TOKEN }}" }'
-          data: '{ "target": { "name": "${{ secrets.DOCKERHUB_REPOSITORY }}:${{ needs.prepare.outputs.version }}" }}'
-      - name: Show Response
-        run: |
-          echo ${{ steps.push-to-snyk.outputs.response }}
-          echo ${{ steps.push-to-snyk.outputs.headers }}
