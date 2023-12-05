@@ -53,7 +53,7 @@ func (reconciler *Reconciler) run(ctx context.Context, updater StatusUpdater) er
 		emptyVersionStatus := status.VersionStatus{}
 		if updater.Target() == nil || *updater.Target() == emptyVersionStatus {
 			log.Info("initial status update in progress with no auto update", "updater", updater.Name())
-		} else if previousSource == currentSource {
+		} else if previousSource == currentSource && updater.Target().Version == updater.CustomVersion() {
 			log.Info("status updated skipped, due to no auto update", "updater", updater.Name())
 			return nil
 		}

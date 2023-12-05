@@ -8,7 +8,6 @@ import (
 
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/scheme/fake"
 	dynatracev1beta1 "github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta1/dynakube"
-	"github.com/Dynatrace/dynatrace-operator/pkg/consts"
 	"github.com/Dynatrace/dynatrace-operator/pkg/injection/startup"
 	dtwebhook "github.com/Dynatrace/dynatrace-operator/pkg/webhook"
 	"github.com/stretchr/testify/assert"
@@ -200,8 +199,8 @@ func TestGetInfraMonitoringNodes(t *testing.T) {
 		require.NoError(t, err)
 		assert.Equal(t, 3, len(monitoringNodes))
 		assert.Equal(t, tenantUUID, monitoringNodes[labeledNode.Name])
-		assert.Equal(t, consts.AgentNoHostTenant, monitoringNodes[node1.Name])
-		assert.Equal(t, consts.AgentNoHostTenant, monitoringNodes[node2.Name])
+		assert.Equal(t, startup.AgentNoHostTenant, monitoringNodes[node1.Name])
+		assert.Equal(t, startup.AgentNoHostTenant, monitoringNodes[node2.Name])
 	})
 }
 
@@ -528,14 +527,14 @@ func createTestInjectedNamespace(dynakube *dynatracev1beta1.DynaKube, name strin
 
 func retrieveInitSecret(t *testing.T, clt client.Client, namespaceName string) corev1.Secret {
 	var initSecret corev1.Secret
-	err := clt.Get(context.TODO(), types.NamespacedName{Name: consts.AgentInitSecretName, Namespace: namespaceName}, &initSecret)
+	err := clt.Get(context.TODO(), types.NamespacedName{Name: AgentInitSecretName, Namespace: namespaceName}, &initSecret)
 	require.NoError(t, err)
 	assert.Equal(t, 2, len(initSecret.Data))
 	return initSecret
 }
 
 func checkSecretConfigExists(t *testing.T, initSecret corev1.Secret) {
-	secretConfig, ok := initSecret.Data[consts.AgentInitSecretConfigField]
+	secretConfig, ok := initSecret.Data[startup.AgentInitSecretConfigField]
 	require.True(t, ok)
 	require.NotNil(t, secretConfig)
 	var parsedConfig startup.SecretConfig

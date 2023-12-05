@@ -3,7 +3,6 @@ package dataingest_mutation
 import (
 	"context"
 
-	"github.com/Dynatrace/dynatrace-operator/pkg/consts"
 	dtingestendpoint "github.com/Dynatrace/dynatrace-operator/pkg/injection/namespace/ingestendpoint"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/dtotel"
 	maputils "github.com/Dynatrace/dynatrace-operator/pkg/util/map"
@@ -79,7 +78,7 @@ func (mutator *DataIngestPodMutator) ensureDataIngestSecret(request *dtwebhook.M
 	err := mutator.apiReader.Get(
 		request.Context,
 		client.ObjectKey{
-			Name:      consts.EnrichmentEndpointSecretName,
+			Name:      dtingestendpoint.EnrichmentEndpointSecretName,
 			Namespace: request.Namespace.Name,
 		},
 		&endpointSecret)

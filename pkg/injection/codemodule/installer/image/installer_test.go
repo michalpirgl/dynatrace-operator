@@ -2,6 +2,7 @@ package image
 
 import (
 	"fmt"
+	"github.com/Dynatrace/dynatrace-operator/pkg/injection/startup"
 	"io"
 	"net/http"
 	"strings"
@@ -9,7 +10,6 @@ import (
 
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/scheme/fake"
 	dynatracev1beta1 "github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta1/dynakube"
-	"github.com/Dynatrace/dynatrace-operator/pkg/consts"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/csi/metadata"
 	"github.com/Dynatrace/dynatrace-operator/pkg/injection/codemodule/installer/zip"
 	"github.com/spf13/afero"
@@ -164,7 +164,7 @@ func TestInstaller_InstallAgent(t *testing.T) {
 				},
 				transport: transport,
 			},
-			args: args{targetDir: consts.AgentBinDirMount},
+			args: args{targetDir: startup.AgentBinDirMount},
 			want: true, wantErr: assert.NoError,
 		},
 	}

@@ -1,10 +1,10 @@
 package oneagent_mutation
 
 import (
+	"github.com/Dynatrace/dynatrace-operator/pkg/injection/startup"
 	"testing"
 
 	dynatracev1beta1 "github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta1/dynakube"
-	"github.com/Dynatrace/dynatrace-operator/pkg/consts"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubeobjects/env"
 	dtwebhook "github.com/Dynatrace/dynatrace-operator/pkg/webhook"
 	"github.com/stretchr/testify/assert"
@@ -25,9 +25,9 @@ func TestConfigureInitContainer(t *testing.T) {
 
 		require.Len(t, request.InstallContainer.Env, expectedBaseInitContainerEnvCount)
 		assert.Len(t, request.InstallContainer.VolumeMounts, 2)
-		envvar := env.FindEnvVar(request.InstallContainer.Env, consts.AgentInstallModeEnv)
+		envvar := env.FindEnvVar(request.InstallContainer.Env, startup.AgentInstallModeEnv)
 		require.NotNil(t, envvar)
-		assert.Equal(t, string(consts.AgentInstallerMode), envvar.Value)
+		assert.Equal(t, string(startup.AgentInstallerMode), envvar.Value)
 	})
 
 	t.Run("add envs and volume mounts (csi)", func(t *testing.T) {
@@ -39,9 +39,9 @@ func TestConfigureInitContainer(t *testing.T) {
 
 		require.Len(t, request.InstallContainer.Env, expectedBaseInitContainerEnvCount)
 		assert.Len(t, request.InstallContainer.VolumeMounts, 2)
-		envvar := env.FindEnvVar(request.InstallContainer.Env, consts.AgentInstallModeEnv)
+		envvar := env.FindEnvVar(request.InstallContainer.Env, startup.AgentInstallModeEnv)
 		require.NotNil(t, envvar)
-		assert.Equal(t, string(consts.AgentCsiMode), envvar.Value)
+		assert.Equal(t, string(startup.AgentCsiMode), envvar.Value)
 	})
 
 	t.Run("add envs and volume mounts (readonly-csi)", func(t *testing.T) {
@@ -53,11 +53,11 @@ func TestConfigureInitContainer(t *testing.T) {
 
 		require.Len(t, request.InstallContainer.Env, expectedBaseInitContainerEnvCount)
 		assert.Len(t, request.InstallContainer.VolumeMounts, 3)
-		envvar := env.FindEnvVar(request.InstallContainer.Env, consts.AgentInstallModeEnv)
+		envvar := env.FindEnvVar(request.InstallContainer.Env, startup.AgentInstallModeEnv)
 		require.NotNil(t, envvar)
-		assert.Equal(t, string(consts.AgentCsiMode), envvar.Value)
+		assert.Equal(t, string(startup.AgentCsiMode), envvar.Value)
 
-		readOnlyEnvvar := env.FindEnvVar(request.InstallContainer.Env, consts.AgentReadonlyCSI)
+		readOnlyEnvvar := env.FindEnvVar(request.InstallContainer.Env, startup.AgentReadonlyCSIEnv)
 		require.NotNil(t, readOnlyEnvvar)
 		assert.Equal(t, "true", readOnlyEnvvar.Value)
 	})

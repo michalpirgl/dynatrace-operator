@@ -7,7 +7,6 @@ import (
 
 	"github.com/Dynatrace/dynatrace-operator/pkg/arch"
 	dtclient "github.com/Dynatrace/dynatrace-operator/pkg/clients/dynatrace"
-	"github.com/Dynatrace/dynatrace-operator/pkg/consts"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/csi/metadata"
 	"github.com/Dynatrace/dynatrace-operator/pkg/injection/codemodule/installer"
 	"github.com/Dynatrace/dynatrace-operator/pkg/injection/codemodule/installer/url"
@@ -61,7 +60,7 @@ func NewRunner(fs afero.Fs) (*Runner, error) {
 				TargetVersion: targetVersion,
 				Url:           env.InstallerUrl,
 				SkipMetadata:  false,
-				PathResolver:  metadata.PathResolver{RootDir: consts.AgentBinDirMount},
+				PathResolver:  metadata.PathResolver{RootDir: AgentBinDirMount},
 			},
 		)
 	}
@@ -84,7 +83,7 @@ func (runner *Runner) Run() (resultedError error) {
 			return err
 		}
 
-		if runner.env.Mode == consts.AgentInstallerMode {
+		if runner.env.Mode == AgentInstallerMode {
 			if err := runner.installOneAgent(); err != nil {
 				return err
 			}
@@ -100,7 +99,7 @@ func (runner *Runner) Run() (resultedError error) {
 }
 
 func (runner *Runner) consumeErrorIfNecessary(resultedError *error) {
-	if runner.env.FailurePolicy == silentPhrase && *resultedError != nil {
+	if runner.env.FailurePolicy == SilentFailurePolicy && *resultedError != nil {
 		log.Error(*resultedError, "This error has been masked to not fail the container.")
 		*resultedError = nil
 	}
@@ -108,9 +107,9 @@ func (runner *Runner) consumeErrorIfNecessary(resultedError *error) {
 
 func (runner *Runner) setHostTenant() error {
 	log.Info("setting host tenant")
-	runner.hostTenant = consts.AgentNoHostTenant
+	runner.hostTenant = AgentNoHostTenant
 	if runner.config.HasHost {
-		if runner.env.FailurePolicy == forcePhrase {
+		if runner.env.FailurePolicy == ForceFailurePolicy {
 			runner.hostTenant = runner.config.TenantUUID
 			log.Info("host tenant set to TenantUUID")
 		} else {
@@ -127,7 +126,7 @@ func (runner *Runner) setHostTenant() error {
 
 func (runner *Runner) installOneAgent() error {
 	log.Info("downloading OneAgent")
-	_, err := runner.installer.InstallAgent(consts.AgentBinDirMount)
+	_, err := runner.installer.InstallAgent(AgentBinDirMount)
 	if err != nil {
 		return err
 	}
@@ -135,7 +134,7 @@ func (runner *Runner) installOneAgent() error {
 	if err != nil {
 		return err
 	}
-	err = processmoduleconfig.UpdateProcessModuleConfigInPlace(runner.fs, consts.AgentBinDirMount, processModuleConfig)
+	err = processmoduleconfig.UpdateProcessModuleConfigInPlace(runner.fs, AgentBinDirMount, processModuleConfig)
 	if err != nil {
 		return err
 	}
@@ -197,7 +196,7 @@ func (runner *Runner) configureOneAgent() error {
 	}
 	if runner.env.IsReadOnlyCSI {
 		log.Info("readOnly CSI detected, copying agent conf to empty-dir")
-		err := copyFolder(runner.fs, getReadOnlyAgentConfMountPath(), consts.AgentConfInitDirMount)
+		err := copyFolder(runner.fs, getReadOnlyAgentConfMountPath(), AgentConfInitDirMount)
 		if err != nil {
 			return err
 		}
@@ -206,19 +205,19 @@ func (runner *Runner) configureOneAgent() error {
 }
 
 func (runner *Runner) setLDPreload() error {
-	return runner.createConfFile(filepath.Join(consts.AgentShareDirMount, consts.LdPreloadFilename), filepath.Join(runner.env.InstallPath, consts.LibAgentProcPath))
+	return runner.createConfFile(filepath.Join(AgentShareDirMount, LdPreloadFilename), filepath.Join(runner.env.InstallPath, LibAgentProcPath))
 }
 
 func (runner *Runner) createContainerConfigurationFiles() error {
 	for _, container := range runner.env.Containers {
 		log.Info("creating conf file for container", "container", container)
-		confFilePath := filepath.Join(consts.AgentShareDirMount, fmt.Sprintf(consts.AgentContainerConfFilenameTemplate, container.Name))
+		confFilePath := filepath.Join(AgentShareDirMount, fmt.Sprintf(AgentContainerConfFilenameTemplate, container.Name))
 		content := runner.getBaseConfContent(container)
 
 		log.Info("adding k8s cluster id")
 		content += runner.getK8SClusterID()
 
-		if runner.hostTenant != consts.AgentNoHostTenant {
+		if runner.hostTenant != AgentNoHostTenant {
 			if runner.config.TenantUUID == runner.hostTenant {
 				log.Info("adding k8s node name")
 				content += runner.getK8SHostInfo()
@@ -242,9 +241,9 @@ func (runner *Runner) enrichMetadata() error {
 }
 
 func (runner *Runner) propagateTLSCert() error {
-	return runner.createConfFile(filepath.Join(consts.AgentShareDirMount, "custom.pem"), runner.config.TlsCert)
+	return runner.createConfFile(filepath.Join(AgentShareDirMount, "custom.pem"), runner.config.TlsCert)
 }
 
 func getReadOnlyAgentConfMountPath() string {
-	return path.Join(consts.AgentBinDirMount, "agent/conf")
+	return path.Join(AgentBinDirMount, "agent/conf")
 }

@@ -1,10 +1,10 @@
 package pod_mutator
 
 import (
+	"github.com/Dynatrace/dynatrace-operator/pkg/injection/startup"
 	"strings"
 
 	dynatracev1beta1 "github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta1/dynakube"
-	"github.com/Dynatrace/dynatrace-operator/pkg/consts"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubeobjects/address"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubeobjects/env"
 	k8spod "github.com/Dynatrace/dynatrace-operator/pkg/util/kubeobjects/pod"
@@ -21,13 +21,13 @@ func createInstallInitContainerBase(webhookImage, clusterID string, pod *corev1.
 		ImagePullPolicy: corev1.PullIfNotPresent,
 		Args:            []string{"init"},
 		Env: []corev1.EnvVar{
-			{Name: consts.InjectionFailurePolicyEnv, Value: maputils.GetField(pod.Annotations, dtwebhook.AnnotationFailurePolicy, dynakube.FeatureInjectionFailurePolicy())},
-			{Name: consts.K8sPodNameEnv, ValueFrom: env.NewEnvVarSourceForField("metadata.name")},
-			{Name: consts.K8sPodUIDEnv, ValueFrom: env.NewEnvVarSourceForField("metadata.uid")},
-			{Name: consts.K8sBasePodNameEnv, Value: getBasePodName(pod)},
-			{Name: consts.K8sClusterIDEnv, Value: clusterID},
-			{Name: consts.K8sNamespaceEnv, ValueFrom: env.NewEnvVarSourceForField("metadata.namespace")},
-			{Name: consts.K8sNodeNameEnv, ValueFrom: env.NewEnvVarSourceForField("spec.nodeName")},
+			{Name: startup.InjectionFailurePolicyEnv, Value: maputils.GetField(pod.Annotations, dtwebhook.AnnotationFailurePolicy, dynakube.FeatureInjectionFailurePolicy())},
+			{Name: startup.K8sPodNameEnv, ValueFrom: env.NewEnvVarSourceForField("metadata.name")},
+			{Name: startup.K8sPodUIDEnv, ValueFrom: env.NewEnvVarSourceForField("metadata.uid")},
+			{Name: startup.K8sBasePodNameEnv, Value: getBasePodName(pod)},
+			{Name: startup.K8sClusterIDEnv, Value: clusterID},
+			{Name: startup.K8sNamespaceEnv, ValueFrom: env.NewEnvVarSourceForField("metadata.namespace")},
+			{Name: startup.K8sNodeNameEnv, ValueFrom: env.NewEnvVarSourceForField("spec.nodeName")},
 		},
 		SecurityContext: securityContextForInitContainer(pod, dynakube),
 		Resources:       initContainerResources(dynakube),

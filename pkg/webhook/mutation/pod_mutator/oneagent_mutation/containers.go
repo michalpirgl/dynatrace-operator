@@ -1,9 +1,9 @@
 package oneagent_mutation
 
 import (
+	"github.com/Dynatrace/dynatrace-operator/pkg/injection/startup"
 	"strconv"
 
-	"github.com/Dynatrace/dynatrace-operator/pkg/consts"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubeobjects/env"
 	maputils "github.com/Dynatrace/dynatrace-operator/pkg/util/map"
 	dtwebhook "github.com/Dynatrace/dynatrace-operator/pkg/webhook"
@@ -17,7 +17,7 @@ func (mutator *OneAgentPodMutator) configureInitContainer(request *dtwebhook.Mut
 
 func (mutator *OneAgentPodMutator) setContainerCount(initContainer *corev1.Container, containerCount int) {
 	desiredContainerCountEnvVarValue := strconv.Itoa(containerCount)
-	initContainer.Env = env.AddOrUpdate(initContainer.Env, corev1.EnvVar{Name: consts.AgentContainerCountEnv, Value: desiredContainerCountEnvVarValue})
+	initContainer.Env = env.AddOrUpdate(initContainer.Env, corev1.EnvVar{Name: startup.AgentContainerCountEnv, Value: desiredContainerCountEnvVarValue})
 }
 
 func (mutator *OneAgentPodMutator) mutateUserContainers(request *dtwebhook.MutationRequest) {

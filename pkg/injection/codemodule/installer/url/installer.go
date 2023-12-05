@@ -1,11 +1,11 @@
 package url
 
 import (
+	"github.com/Dynatrace/dynatrace-operator/pkg/injection/startup"
 	"os"
 	"path/filepath"
 
 	dtclient "github.com/Dynatrace/dynatrace-operator/pkg/clients/dynatrace"
-	"github.com/Dynatrace/dynatrace-operator/pkg/consts"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/csi/metadata"
 	"github.com/Dynatrace/dynatrace-operator/pkg/injection/codemodule/installer"
 	"github.com/Dynatrace/dynatrace-operator/pkg/injection/codemodule/installer/common"
@@ -109,7 +109,7 @@ func (installer Installer) installAgent(targetDir string) error {
 
 func (installer Installer) isInitContainerMode() bool {
 	if installer.props != nil {
-		return installer.props.PathResolver.RootDir == consts.AgentBinDirMount
+		return installer.props.PathResolver.RootDir == startup.AgentBinDirMount
 	}
 	return false
 }
@@ -123,5 +123,5 @@ func (installer Installer) isAlreadyDownloaded(targetDir string) bool {
 }
 
 func isStandaloneInstall(targetDir string) bool {
-	return consts.AgentBinDirMount == targetDir
+	return startup.AgentBinDirMount == targetDir
 }

@@ -1,10 +1,11 @@
 package oneagent_mutation
 
 import (
+	"github.com/Dynatrace/dynatrace-operator/pkg/injection/startup"
 	"testing"
 
 	dynatracev1beta1 "github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta1/dynakube"
-	"github.com/Dynatrace/dynatrace-operator/pkg/consts"
+
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/deploymentmetadata"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubeobjects/env"
 	"github.com/stretchr/testify/assert"
@@ -98,7 +99,7 @@ func TestAddInstallerInitEnvs(t *testing.T) {
 		assert.Equal(t, installerInfo.installPath, container.Env[2].Value)
 		assert.Equal(t, installerInfo.installerURL, container.Env[3].Value)
 		assert.Equal(t, installerInfo.version, container.Env[4].Value)
-		assert.Equal(t, string(consts.AgentCsiMode), container.Env[5].Value)
+		assert.Equal(t, string(startup.AgentCsiMode), container.Env[5].Value)
 		assert.Equal(t, "false", container.Env[6].Value)
 		assert.Equal(t, "true", container.Env[7].Value)
 	})
@@ -108,7 +109,7 @@ func TestAddInstallerInitEnvs(t *testing.T) {
 		installerInfo := getTestInstallerInfo()
 		addInstallerInitEnvs(container, installerInfo, *getTestReadOnlyCSIDynakube())
 		require.Len(t, container.Env, expectedBaseInitContainerEnvCount)
-		env := env.FindEnvVar(container.Env, consts.AgentReadonlyCSI)
+		env := env.FindEnvVar(container.Env, startup.AgentReadonlyCSIEnv)
 		require.NotNil(t, env)
 		env.Value = "true"
 	})

@@ -2,8 +2,8 @@ package dataingest_mutation
 
 import (
 	"context"
+	"github.com/Dynatrace/dynatrace-operator/pkg/injection/startup"
 
-	"github.com/Dynatrace/dynatrace-operator/pkg/consts"
 	dtwebhook "github.com/Dynatrace/dynatrace-operator/pkg/webhook"
 	"github.com/pkg/errors"
 	corev1 "k8s.io/api/core/v1"
@@ -25,8 +25,8 @@ func newWorkloadInfo(partialObjectMetadata *metav1.PartialObjectMetadata) worklo
 
 func newUnknownWorkloadInfo() workloadInfo {
 	return workloadInfo{
-		name: consts.EnrichmentUnknownWorkload,
-		kind: consts.EnrichmentUnknownWorkload,
+		name: startup.EnrichmentUnknownWorkload,
+		kind: startup.EnrichmentUnknownWorkload,
 	}
 }
 

@@ -9,14 +9,25 @@ var (
 )
 
 const (
-	preloadEnv           = "LD_PRELOAD"
-	networkZoneEnv       = "DT_NETWORK_ZONE"
-	proxyEnv             = "DT_PROXY"
+	preloadEnv     = "LD_PRELOAD"
+	networkZoneEnv = "DT_NETWORK_ZONE"
+
+	// TODO
+	proxyEnv = "DT_PROXY"
+
+	// TODO
 	dynatraceMetadataEnv = "DT_DEPLOYMENT_METADATA"
 
-	releaseVersionEnv      = "DT_RELEASE_VERSION"
-	releaseProductEnv      = "DT_RELEASE_PRODUCT"
-	releaseStageEnv        = "DT_RELEASE_STAGE"
+	// TODO
+	releaseVersionEnv = "DT_RELEASE_VERSION"
+
+	// TODO
+	releaseProductEnv = "DT_RELEASE_PRODUCT"
+
+	// TODO
+	releaseStageEnv = "DT_RELEASE_STAGE"
+
+	// TODO
 	releaseBuildVersionEnv = "DT_RELEASE_BUILD_VERSION"
 
 	OneAgentBinVolumeName     = "oneagent-bin"
@@ -24,7 +35,9 @@ const (
 	injectionConfigVolumeName = "injection-config"
 
 	oneAgentCustomKeysPath = "/var/lib/dynatrace/oneagent/agent/customkeys"
-	customCertFileName     = "custom.pem"
+
+	// TODO
+	customCertFileName = "custom.pem"
 
 	preloadPath       = "/etc/ld.so.preload"
 	containerConfPath = "/var/lib/dynatrace/oneagent/agent/config/container.conf"
@@ -37,5 +50,7 @@ const (
 	oneagentDataStorageMountPath  = "/opt/dynatrace/oneagent-paas/datastorage"
 
 	oneagentLogVolumeName = "oneagent-log"
-	oneagentLogMountPath  = "/opt/dynatrace/oneagent-paas/log"
+
+	// TODO
+	oneagentLogMountPath = "/opt/dynatrace/oneagent-paas/log"
 )

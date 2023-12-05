@@ -2,12 +2,12 @@ package zip
 
 import (
 	"fmt"
+	"github.com/Dynatrace/dynatrace-operator/pkg/injection/startup"
 	"io"
 	"os"
 	"path/filepath"
 	"strings"
 
-	"github.com/Dynatrace/dynatrace-operator/pkg/consts"
 	"github.com/Dynatrace/dynatrace-operator/pkg/injection/codemodule/installer/common"
 	"github.com/klauspost/compress/zip"
 	"github.com/pkg/errors"
@@ -34,7 +34,7 @@ func (extractor OneAgentExtractor) ExtractZip(sourceFile afero.File, targetDir s
 	}
 
 	extractDest := extractor.pathResolver.AgentTempUnzipRootDir()
-	if extractor.pathResolver.RootDir == consts.AgentBinDirMount {
+	if extractor.pathResolver.RootDir == startup.AgentBinDirMount {
 		extractDest = targetDir
 	}
 

@@ -2,9 +2,9 @@ package oneagent_mutation
 
 import (
 	"context"
+	"github.com/Dynatrace/dynatrace-operator/pkg/injection/startup"
 
 	dynatracev1beta1 "github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta1/dynakube"
-	"github.com/Dynatrace/dynatrace-operator/pkg/consts"
 	"github.com/Dynatrace/dynatrace-operator/pkg/injection/namespace/initgeneration"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/dtotel"
 	maputils "github.com/Dynatrace/dynatrace-operator/pkg/util/map"
@@ -80,7 +80,7 @@ func (mutator *OneAgentPodMutator) Reinvoke(request *dtwebhook.ReinvocationReque
 
 func (mutator *OneAgentPodMutator) ensureInitSecret(request *dtwebhook.MutationRequest) error {
 	var initSecret corev1.Secret
-	secretObjectKey := client.ObjectKey{Name: consts.AgentInitSecretName, Namespace: request.Namespace.Name}
+	secretObjectKey := client.ObjectKey{Name: initgeneration.AgentInitSecretName, Namespace: request.Namespace.Name}
 	if err := mutator.apiReader.Get(request.Context, secretObjectKey, &initSecret); k8serrors.IsNotFound(err) {
 		initGenerator := initgeneration.NewInitGenerator(mutator.client, mutator.apiReader, mutator.webhookNamespace)
 		err := initGenerator.GenerateForNamespace(request.Context, request.DynaKube, request.Namespace.Name)
@@ -107,7 +107,7 @@ func containerIsInjected(container *corev1.Container) bool {
 
 func getVolumeMode(dynakube dynatracev1beta1.DynaKube) string {
 	if dynakube.NeedsCSIDriver() {
-		return string(consts.AgentCsiMode)
+		return string(startup.AgentCsiMode)
 	}
-	return string(consts.AgentInstallerMode)
+	return string(startup.AgentInstallerMode)
 }

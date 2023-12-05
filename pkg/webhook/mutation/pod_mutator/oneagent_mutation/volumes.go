@@ -2,10 +2,11 @@ package oneagent_mutation
 
 import (
 	"fmt"
+	"github.com/Dynatrace/dynatrace-operator/pkg/injection/namespace/initgeneration"
+	"github.com/Dynatrace/dynatrace-operator/pkg/injection/startup"
 	"path/filepath"
 
 	dynatracev1beta1 "github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta1/dynakube"
-	"github.com/Dynatrace/dynatrace-operator/pkg/consts"
 	dtcsi "github.com/Dynatrace/dynatrace-operator/pkg/controllers/csi"
 	csivolumes "github.com/Dynatrace/dynatrace-operator/pkg/controllers/csi/driver/volumes"
 	appvolumes "github.com/Dynatrace/dynatrace-operator/pkg/controllers/csi/driver/volumes/app"
@@ -26,7 +27,7 @@ func addOneAgentVolumeMounts(container *corev1.Container, installPath string) {
 		corev1.VolumeMount{
 			Name:      oneAgentShareVolumeName,
 			MountPath: preloadPath,
-			SubPath:   consts.LdPreloadFilename,
+			SubPath:   startup.LdPreloadFilename,
 		},
 		corev1.VolumeMount{
 			Name:      OneAgentBinVolumeName,
@@ -57,7 +58,7 @@ func addVolumeMountsForReadOnlyCSI(container *corev1.Container) {
 }
 
 func getContainerConfSubPath(containerName string) string {
-	return fmt.Sprintf(consts.AgentContainerConfFilenameTemplate, containerName)
+	return fmt.Sprintf(startup.AgentContainerConfFilenameTemplate, containerName)
 }
 
 func addCertVolumeMounts(container *corev1.Container) {
@@ -71,11 +72,11 @@ func addCertVolumeMounts(container *corev1.Container) {
 
 func addInitVolumeMounts(initContainer *corev1.Container, dynakube dynatracev1beta1.DynaKube) {
 	volumeMounts := []corev1.VolumeMount{
-		{Name: OneAgentBinVolumeName, MountPath: consts.AgentBinDirMount},
-		{Name: oneAgentShareVolumeName, MountPath: consts.AgentShareDirMount},
+		{Name: OneAgentBinVolumeName, MountPath: startup.AgentBinDirMount},
+		{Name: oneAgentShareVolumeName, MountPath: startup.AgentShareDirMount},
 	}
 	if dynakube.FeatureReadOnlyCsiVolume() {
-		volumeMounts = append(volumeMounts, corev1.VolumeMount{Name: oneagentConfVolumeName, MountPath: consts.AgentConfInitDirMount})
+		volumeMounts = append(volumeMounts, corev1.VolumeMount{Name: oneagentConfVolumeName, MountPath: startup.AgentConfInitDirMount})
 	}
 	initContainer.VolumeMounts = append(initContainer.VolumeMounts, volumeMounts...)
 }
@@ -83,8 +84,8 @@ func addInitVolumeMounts(initContainer *corev1.Container, dynakube dynatracev1be
 func addCurlOptionsVolumeMount(container *corev1.Container) {
 	container.VolumeMounts = append(container.VolumeMounts, corev1.VolumeMount{
 		Name:      oneAgentShareVolumeName,
-		MountPath: filepath.Join(oneAgentCustomKeysPath, consts.AgentCurlOptionsFileName),
-		SubPath:   consts.AgentCurlOptionsFileName,
+		MountPath: filepath.Join(oneAgentCustomKeysPath, startup.AgentCurlOptionsFileName),
+		SubPath:   startup.AgentCurlOptionsFileName,
 	})
 }
 
@@ -94,7 +95,7 @@ func addInjectionConfigVolume(pod *corev1.Pod) {
 			Name: injectionConfigVolumeName,
 			VolumeSource: corev1.VolumeSource{
 				Secret: &corev1.SecretVolumeSource{
-					SecretName: consts.AgentInitSecretName,
+					SecretName: initgeneration.AgentInitSecretName,
 				},
 			},
 		},
@@ -103,7 +104,7 @@ func addInjectionConfigVolume(pod *corev1.Pod) {
 
 func addInjectionConfigVolumeMount(container *corev1.Container) {
 	container.VolumeMounts = append(container.VolumeMounts,
-		corev1.VolumeMount{Name: injectionConfigVolumeName, MountPath: consts.AgentConfigDirMount},
+		corev1.VolumeMount{Name: injectionConfigVolumeName, MountPath: startup.AgentConfigDirMount},
 	)
 }
 

@@ -7,15 +7,42 @@ import (
 	"strings"
 
 	"github.com/Dynatrace/dynatrace-operator/pkg/arch"
-	"github.com/Dynatrace/dynatrace-operator/pkg/consts"
 	"github.com/pkg/errors"
 )
 
 const (
 	trueStatement = "true"
-	silentPhrase  = "silent"
-	failPhrase    = "fail"
-	forcePhrase   = "force"
+
+	InjectionFailurePolicyEnv = "FAILURE_POLICY"
+	SilentFailurePolicy       = "silent"
+	FailFailurePolicy         = "fail"
+	ForceFailurePolicy        = "force"
+
+	K8sNodeNameEnv    = "K8S_NODE_NAME"
+	K8sPodNameEnv     = "K8S_PODNAME"
+	K8sPodUIDEnv      = "K8S_PODUID"
+	K8sBasePodNameEnv = "K8S_BASEPODNAME"
+	K8sNamespaceEnv   = "K8S_NAMESPACE"
+	K8sClusterIDEnv   = "K8S_CLUSTER_ID"
+
+	AgentInstallModeEnv      = "MODE"
+	AgentInstallerUrlEnv     = "INSTALLER_URL"
+	AgentInstallerFlavorEnv  = "FLAVOR"
+	AgentInstallerTechEnv    = "TECHNOLOGIES"
+	AgentInstallerVersionEnv = "VERSION"
+
+	AgentInstallPathEnv            = "INSTALLPATH"
+	AgentContainerCountEnv         = "CONTAINERS_COUNT"
+	AgentContainerNameEnvTemplate  = "CONTAINER_%d_NAME"
+	AgentContainerImageEnvTemplate = "CONTAINER_%d_IMAGE"
+
+	AgentInjectedEnv    = "ONEAGENT_INJECTED"
+	AgentReadonlyCSIEnv = "CSI_VOLUME_READONLY"
+
+	EnrichmentInjectedEnv     = "DATA_INGEST_INJECTED"
+	EnrichmentWorkloadKindEnv = "DT_WORKLOAD_KIND"
+	EnrichmentWorkloadNameEnv = "DT_WORKLOAD_NAME"
+	EnrichmentUnknownWorkload = "UNKNOWN"
 )
 
 type containerInfo struct {
@@ -24,9 +51,9 @@ type containerInfo struct {
 }
 
 type environment struct {
-	Mode          consts.InstallMode `json:"mode"`
-	FailurePolicy string             `json:"failurePolicy"`
-	InstallerUrl  string             `json:"installerUrl"`
+	Mode          InstallMode `json:"mode"`
+	FailurePolicy string      `json:"failurePolicy"`
+	InstallerUrl  string      `json:"installerUrl"`
 
 	InstallerFlavor string          `json:"installerFlavor"`
 	InstallVersion  string          `json:"installVersion"`
@@ -127,32 +154,32 @@ func (env *environment) setMutationTypeFields() {
 }
 
 func (env *environment) addMode() error {
-	mode, err := checkEnvVar(consts.AgentInstallModeEnv)
+	mode, err := checkEnvVar(AgentInstallModeEnv)
 	if err != nil {
 		return err
 	}
-	env.Mode = consts.InstallMode(mode)
+	env.Mode = InstallMode(mode)
 	return nil
 }
 
 func (env *environment) addFailurePolicy() error {
-	failurePolicy, err := checkEnvVar(consts.InjectionFailurePolicyEnv)
+	failurePolicy, err := checkEnvVar(InjectionFailurePolicyEnv)
 	if err != nil {
 		return err
 	}
 	switch failurePolicy {
-	case failPhrase:
-		env.FailurePolicy = failPhrase
-	case forcePhrase:
-		env.FailurePolicy = forcePhrase
+	case FailFailurePolicy:
+		env.FailurePolicy = FailFailurePolicy
+	case ForceFailurePolicy:
+		env.FailurePolicy = ForceFailurePolicy
 	default:
-		env.FailurePolicy = silentPhrase
+		env.FailurePolicy = SilentFailurePolicy
 	}
 	return nil
 }
 
 func (env *environment) addInstallerFlavor() {
-	flavor, _ := checkEnvVar(consts.AgentInstallerFlavorEnv)
+	flavor, _ := checkEnvVar(AgentInstallerFlavorEnv)
 	if flavor == "" {
 		env.InstallerFlavor = arch.Flavor
 	} else {
@@ -161,7 +188,7 @@ func (env *environment) addInstallerFlavor() {
 }
 
 func (env *environment) addInstallerTech() error {
-	technologies, err := checkEnvVar(consts.AgentInstallerTechEnv)
+	technologies, err := checkEnvVar(AgentInstallerTechEnv)
 	if err != nil {
 		return err
 	}
@@ -170,7 +197,7 @@ func (env *environment) addInstallerTech() error {
 }
 
 func (env *environment) addInstallPath() error {
-	installPath, err := checkEnvVar(consts.AgentInstallPathEnv)
+	installPath, err := checkEnvVar(AgentInstallPathEnv)
 	if err != nil {
 		return err
 	}
@@ -180,7 +207,7 @@ func (env *environment) addInstallPath() error {
 
 func (env *environment) addContainers() error {
 	containers := []containerInfo{}
-	containerCountStr, err := checkEnvVar(consts.AgentContainerCountEnv)
+	containerCountStr, err := checkEnvVar(AgentContainerCountEnv)
 	if err != nil {
 		return err
 	}
@@ -189,8 +216,8 @@ func (env *environment) addContainers() error {
 		return err
 	}
 	for i := 1; i <= countCount; i++ {
-		nameEnv := fmt.Sprintf(consts.AgentContainerNameEnvTemplate, i)
-		imageEnv := fmt.Sprintf(consts.AgentContainerImageEnvTemplate, i)
+		nameEnv := fmt.Sprintf(AgentContainerNameEnvTemplate, i)
+		imageEnv := fmt.Sprintf(AgentContainerImageEnvTemplate, i)
 
 		containerName, err := checkEnvVar(nameEnv)
 		if err != nil {
@@ -210,7 +237,7 @@ func (env *environment) addContainers() error {
 }
 
 func (env *environment) addK8NodeName() error {
-	nodeName, err := checkEnvVar(consts.K8sNodeNameEnv)
+	nodeName, err := checkEnvVar(K8sNodeNameEnv)
 	if err != nil {
 		return err
 	}
@@ -219,7 +246,7 @@ func (env *environment) addK8NodeName() error {
 }
 
 func (env *environment) addK8PodName() error {
-	podName, err := checkEnvVar(consts.K8sPodNameEnv)
+	podName, err := checkEnvVar(K8sPodNameEnv)
 	if err != nil {
 		return err
 	}
@@ -228,7 +255,7 @@ func (env *environment) addK8PodName() error {
 }
 
 func (env *environment) addK8PodUID() error {
-	podUID, err := checkEnvVar(consts.K8sPodUIDEnv)
+	podUID, err := checkEnvVar(K8sPodUIDEnv)
 	if err != nil {
 		return err
 	}
@@ -237,7 +264,7 @@ func (env *environment) addK8PodUID() error {
 }
 
 func (env *environment) addK8ClusterID() error {
-	clusterID, err := checkEnvVar(consts.K8sClusterIDEnv)
+	clusterID, err := checkEnvVar(K8sClusterIDEnv)
 	if err != nil {
 		return err
 	}
@@ -246,7 +273,7 @@ func (env *environment) addK8ClusterID() error {
 }
 
 func (env *environment) addK8BasePodName() error {
-	basePodName, err := checkEnvVar(consts.K8sBasePodNameEnv)
+	basePodName, err := checkEnvVar(K8sBasePodNameEnv)
 	if err != nil {
 		return err
 	}
@@ -255,7 +282,7 @@ func (env *environment) addK8BasePodName() error {
 }
 
 func (env *environment) addK8Namespace() error {
-	namespace, err := checkEnvVar(consts.K8sNamespaceEnv)
+	namespace, err := checkEnvVar(K8sNamespaceEnv)
 	if err != nil {
 		return err
 	}
@@ -264,11 +291,11 @@ func (env *environment) addK8Namespace() error {
 }
 
 func (env *environment) addWorkloadKind() error {
-	workloadKind, err := checkEnvVar(consts.EnrichmentWorkloadKindEnv)
+	workloadKind, err := checkEnvVar(EnrichmentWorkloadKindEnv)
 	if err != nil {
 		return err
 	}
-	if workloadKind == consts.EnrichmentUnknownWorkload {
+	if workloadKind == EnrichmentUnknownWorkload {
 		env.WorkloadKind = ""
 	} else {
 		env.WorkloadKind = workloadKind
@@ -277,11 +304,11 @@ func (env *environment) addWorkloadKind() error {
 }
 
 func (env *environment) addWorkloadName() error {
-	workloadName, err := checkEnvVar(consts.EnrichmentWorkloadNameEnv)
+	workloadName, err := checkEnvVar(EnrichmentWorkloadNameEnv)
 	if err != nil {
 		return err
 	}
-	if workloadName == consts.EnrichmentUnknownWorkload {
+	if workloadName == EnrichmentUnknownWorkload {
 		env.WorkloadName = ""
 	} else {
 		env.WorkloadName = workloadName
@@ -290,27 +317,27 @@ func (env *environment) addWorkloadName() error {
 }
 
 func (env *environment) addInstallerUrl() {
-	url, _ := checkEnvVar(consts.AgentInstallerUrlEnv)
+	url, _ := checkEnvVar(AgentInstallerUrlEnv)
 	env.InstallerUrl = url
 }
 
 func (env *environment) addInstallVersion() {
-	version, _ := checkEnvVar(consts.AgentInstallerVersionEnv)
+	version, _ := checkEnvVar(AgentInstallerVersionEnv)
 	env.InstallVersion = version
 }
 
 func (env *environment) addOneAgentInjected() {
-	oneAgentInjected, _ := checkEnvVar(consts.AgentInjectedEnv)
+	oneAgentInjected, _ := checkEnvVar(AgentInjectedEnv)
 	env.OneAgentInjected = oneAgentInjected == trueStatement
 }
 
 func (env *environment) addIsReadOnlyCSI() {
-	isReadOnlyCSI, _ := checkEnvVar(consts.AgentReadonlyCSI)
+	isReadOnlyCSI, _ := checkEnvVar(AgentReadonlyCSIEnv)
 	env.IsReadOnlyCSI = isReadOnlyCSI == trueStatement
 }
 
 func (env *environment) addDataIngestInjected() {
-	dataIngestInjected, _ := checkEnvVar(consts.EnrichmentInjectedEnv)
+	dataIngestInjected, _ := checkEnvVar(EnrichmentInjectedEnv)
 	env.DataIngestInjected = dataIngestInjected == trueStatement
 }
 

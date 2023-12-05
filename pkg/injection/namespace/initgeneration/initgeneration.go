@@ -6,7 +6,6 @@ import (
 
 	dynatracev1beta1 "github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta1/dynakube"
 	dtclient "github.com/Dynatrace/dynatrace-operator/pkg/clients/dynatrace"
-	"github.com/Dynatrace/dynatrace-operator/pkg/consts"
 	"github.com/Dynatrace/dynatrace-operator/pkg/injection/namespace/mapper"
 	"github.com/Dynatrace/dynatrace-operator/pkg/injection/startup"
 	k8slabels "github.com/Dynatrace/dynatrace-operator/pkg/util/kubeobjects/labels"
@@ -18,6 +17,10 @@ import (
 	"k8s.io/apimachinery/pkg/labels"
 	"k8s.io/apimachinery/pkg/types"
 	"sigs.k8s.io/controller-runtime/pkg/client"
+)
+
+const (
+	AgentInitSecretName = "dynatrace-dynakube-config"
 )
 
 // InitGenerator manages the init secret generation for the user namespaces.
@@ -55,7 +58,7 @@ func (g *InitGenerator) GenerateForNamespace(ctx context.Context, dk dynatracev1
 	secret := &corev1.Secret{
 		TypeMeta: metav1.TypeMeta{},
 		ObjectMeta: metav1.ObjectMeta{
-			Name:      consts.AgentInitSecretName,
+			Name:      AgentInitSecretName,
 			Namespace: targetNs,
 			Labels:    coreLabels.BuildMatchLabels(),
 		},
@@ -90,7 +93,7 @@ func (g *InitGenerator) GenerateForDynakube(ctx context.Context, dk *dynatracev1
 	secret := corev1.Secret{
 		TypeMeta: metav1.TypeMeta{},
 		ObjectMeta: metav1.ObjectMeta{
-			Name:   consts.AgentInitSecretName,
+			Name:   AgentInitSecretName,
 			Labels: coreLabels.BuildMatchLabels(),
 		},
 		Data: data,
@@ -251,7 +254,7 @@ func (g *InitGenerator) initIMNodes() (nodeInfo, error) {
 	}
 	imNodes := map[string]string{}
 	for _, node := range nodeList.Items {
-		imNodes[node.Name] = consts.AgentNoHostTenant
+		imNodes[node.Name] = startup.AgentNoHostTenant
 	}
 	return nodeInfo{nodeList.Items, imNodes}, nil
 }
@@ -262,7 +265,7 @@ func (g *InitGenerator) createSecretData(secretConfig *startup.SecretConfig) (ma
 		return nil, err
 	}
 	return map[string][]byte{
-		consts.AgentInitSecretConfigField: jsonContent,
-		dynatracev1beta1.ProxyKey:         []byte(secretConfig.Proxy), // needed so that it can be mounted to the user's pod without directly reading the secret
+		startup.AgentInitSecretConfigField: jsonContent,
+		dynatracev1beta1.ProxyKey:          []byte(secretConfig.Proxy), // needed so that it can be mounted to the user's pod without directly reading the secret
 	}, nil
 }

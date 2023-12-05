@@ -2,13 +2,13 @@ package url
 
 import (
 	"fmt"
+	"github.com/Dynatrace/dynatrace-operator/pkg/injection/startup"
 	"io"
 	"os"
 	"testing"
 
 	"github.com/Dynatrace/dynatrace-operator/pkg/arch"
 	dtclient "github.com/Dynatrace/dynatrace-operator/pkg/clients/dynatrace"
-	"github.com/Dynatrace/dynatrace-operator/pkg/consts"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/csi/metadata"
 	"github.com/Dynatrace/dynatrace-operator/pkg/injection/codemodule/installer/zip"
 	"github.com/Dynatrace/dynatrace-operator/test/mocks/pkg/clients/dynatrace"
@@ -210,7 +210,7 @@ func TestIsAlreadyDownloaded(t *testing.T) {
 	})
 	t.Run(`false if standalone`, func(t *testing.T) {
 		fs := afero.NewMemMapFs()
-		targetDir := consts.AgentBinDirMount
+		targetDir := startup.AgentBinDirMount
 		installer := &Installer{
 			fs:    fs,
 			props: &Properties{},

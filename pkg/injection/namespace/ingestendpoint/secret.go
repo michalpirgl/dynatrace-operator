@@ -8,7 +8,6 @@ import (
 
 	dynatracev1beta1 "github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta1/dynakube"
 	dtclient "github.com/Dynatrace/dynatrace-operator/pkg/clients/dynatrace"
-	"github.com/Dynatrace/dynatrace-operator/pkg/consts"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/activegate/capability"
 	agconsts "github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/activegate/consts"
 	"github.com/Dynatrace/dynatrace-operator/pkg/injection/namespace/mapper"
@@ -22,9 +21,10 @@ import (
 )
 
 const (
-	MetricsUrlSecretField   = "DT_METRICS_INGEST_URL"
-	MetricsTokenSecretField = "DT_METRICS_INGEST_API_TOKEN"
-	configFile              = "endpoint.properties"
+	MetricsUrlSecretField        = "DT_METRICS_INGEST_URL"
+	MetricsTokenSecretField      = "DT_METRICS_INGEST_API_TOKEN"
+	EnrichmentEndpointSecretName = "dynatrace-data-ingest-endpoint"
+	configFile                   = "endpoint.properties"
 )
 
 // EndpointSecretGenerator manages the mint endpoint secret generation for the user namespaces.
@@ -60,7 +60,7 @@ func (g *EndpointSecretGenerator) GenerateForNamespace(ctx context.Context, dkNa
 	secret := &corev1.Secret{
 		TypeMeta: metav1.TypeMeta{},
 		ObjectMeta: metav1.ObjectMeta{
-			Name:      consts.EnrichmentEndpointSecretName,
+			Name:      EnrichmentEndpointSecretName,
 			Namespace: targetNs,
 			Labels:    coreLabels.BuildMatchLabels(),
 		},
@@ -94,7 +94,7 @@ func (g *EndpointSecretGenerator) GenerateForDynakube(ctx context.Context, dk *d
 	secret := corev1.Secret{
 		TypeMeta: metav1.TypeMeta{},
 		ObjectMeta: metav1.ObjectMeta{
-			Name:   consts.EnrichmentEndpointSecretName,
+			Name:   EnrichmentEndpointSecretName,
 			Labels: coreLabels.BuildMatchLabels(),
 		},
 		Data: data,
@@ -118,7 +118,7 @@ func (g *EndpointSecretGenerator) RemoveEndpointSecrets(ctx context.Context, dk 
 	for _, targetNs := range nsList {
 		endpointSecret := &corev1.Secret{
 			ObjectMeta: metav1.ObjectMeta{
-				Name:      consts.EnrichmentEndpointSecretName,
+				Name:      EnrichmentEndpointSecretName,
 				Namespace: targetNs.GetName(),
 			},
 		}

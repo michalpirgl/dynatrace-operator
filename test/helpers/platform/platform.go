@@ -11,13 +11,6 @@ const (
 	kubernetesPlatformEnvValue = "kubernetes"
 )
 
-type Platform int
-
-const (
-	Kubernetes Platform = iota
-	Openshift
-)
-
 const openshiftSecurityGVR = "security.openshift.io/v1"
 
 type Resolver struct {
@@ -33,7 +26,6 @@ func NewResolver() *Resolver {
 func (p *Resolver) IsOpenshift() (bool, error) {
 	client, err := p.discoveryProvider()
 	if err != nil {
-		// t.Fatal("failed to detect platform from cluster", err)
 		return false, err
 	}
 
