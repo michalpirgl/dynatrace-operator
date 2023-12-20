@@ -9,6 +9,7 @@ import (
 	"github.com/pkg/errors"
 	"golang.org/x/net/context"
 	k8serrors "k8s.io/apimachinery/pkg/api/errors"
+	"k8s.io/apimachinery/pkg/api/meta"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/types"
@@ -72,7 +73,7 @@ func (r *Reconciler) Reconcile(ctx context.Context) error {
 	return err
 }
 
-func (r *Reconciler) needsUpdate(ctx context.Context, secretName string, isAllowedFunc dynatracev1beta1.RequestAllowedChecker) (bool, error) {
+func (r *Reconciler) needsUpdate(ctx context.Context, secretName string, condition *metav1.Condition) (bool, error) {
 	query := k8ssecret.NewQuery(ctx, r.client, r.apiReader, log)
 	_, err := query.Get(types.NamespacedName{Name: secretName, Namespace: r.dynakube.Namespace})
 	if err != nil {
@@ -82,12 +83,14 @@ func (r *Reconciler) needsUpdate(ctx context.Context, secretName string, isAllow
 		}
 		return false, err
 	}
-	return isAllowedFunc(r.timeProvider), nil
+	return isConditionOutdated(r.timeProvider, condition, r.dynakube.FeatureApiRequestThreshold()), nil
 }
 
 func (r *Reconciler) reconcileOneAgentConnectionInfo(ctx context.Context) error {
-	needsUpdate, err := r.needsUpdate(ctx, r.dynakube.OneagentTenantSecret(), r.dynakube.IsOneAgentConnectionInfoUpdateAllowed)
+	prevCondition := meta.FindStatusCondition(r.dynakube.Status.Conditions, OneAgentConnectionInfoConditionType)
+	needsUpdate, err := r.needsUpdate(ctx, r.dynakube.OneagentTenantSecret(), prevCondition)
 	if err != nil {
+		setCondition(r.dynakube, OneAgentErrorCondition(err, UnexpectedErrorReason))
 		return err
 	}
 	if !needsUpdate {
@@ -100,13 +103,16 @@ func (r *Reconciler) reconcileOneAgentConnectionInfo(ctx context.Context) error 
 
 	connectionInfo, err := r.dtc.GetOneAgentConnectionInfo()
 	if err != nil {
-		return errors.WithMessage(err, "failed to get OneAgent connection info")
+		err := errors.WithMessage(err, "failed to get OneAgent connection info")
+		setCondition(r.dynakube, OneAgentErrorCondition(err, UnexpectedErrorReason))
+		return err
 	}
 
 	r.updateDynakubeOneAgentStatus(connectionInfo)
 
 	err = r.createTenantTokenSecret(ctx, r.dynakube.OneagentTenantSecret(), connectionInfo.ConnectionInfo)
 	if err != nil {
+		// TODO: Maybe special condition
 		return err
 	}
 
@@ -118,12 +124,13 @@ func (r *Reconciler) reconcileOneAgentConnectionInfo(ctx context.Context) error 
 
 	if len(connectionInfo.CommunicationHosts) == 0 {
 		log.Info("no OneAgent communication hosts received, tenant API requests not yet throttled")
-		return NoOneAgentCommunicationHostsError
+		err := NoOneAgentCommunicationHostsError
+		setCondition(r.dynakube, OneAgentErrorCondition(err, NoCommunicationHostsErrorReason))
+		return err
 	}
 
 	log.Info("received OneAgent communication hosts", "communication hosts", connectionInfo.CommunicationHosts, "tenant", connectionInfo.TenantUUID)
-
-	r.dynakube.Status.OneAgent.ConnectionInfoStatus.LastRequest = metav1.Now()
+	setCondition(r.dynakube, OneAgentReadyCondition())
 	return nil
 }
 
@@ -145,9 +152,12 @@ func copyCommunicationHosts(dest *dynatracev1beta1.OneAgentConnectionInfoStatus,
 }
 
 func (r *Reconciler) reconcileActiveGateConnectionInfo(ctx context.Context) error {
-	needsUpdate, err := r.needsUpdate(ctx, r.dynakube.ActivegateTenantSecret(), r.dynakube.IsActiveGateConnectionInfoUpdateAllowed)
+	prevCondition := meta.FindStatusCondition(r.dynakube.Status.Conditions, ActiveGateConnectionInfoConditionType)
+	needsUpdate, err := r.needsUpdate(ctx, r.dynakube.ActivegateTenantSecret(), prevCondition)
 	if err != nil {
+		setCondition(r.dynakube, ActiveGateErrorCondition(err, UnexpectedErrorReason))
 		return err
+
 	}
 	if !needsUpdate {
 		log.Info(dynatracev1beta1.GetCacheValidMessage(
@@ -160,6 +170,7 @@ func (r *Reconciler) reconcileActiveGateConnectionInfo(ctx context.Context) erro
 	connectionInfo, err := r.dtc.GetActiveGateConnectionInfo()
 	if err != nil {
 		log.Info("failed to get activegate connection info")
+		setCondition(r.dynakube, ActiveGateErrorCondition(err, UnexpectedErrorReason))
 		return err
 	}
 
@@ -167,11 +178,12 @@ func (r *Reconciler) reconcileActiveGateConnectionInfo(ctx context.Context) erro
 
 	err = r.createTenantTokenSecret(ctx, r.dynakube.ActivegateTenantSecret(), connectionInfo.ConnectionInfo)
 	if err != nil {
+		// TODO: Maybe special condition for this error?
 		return err
 	}
 
 	log.Info("activegate connection info updated")
-	r.dynakube.Status.ActiveGate.ConnectionInfoStatus.LastRequest = metav1.Now()
+	setCondition(r.dynakube, ActiveGateReadyCondition())
 	return nil
 }
 
