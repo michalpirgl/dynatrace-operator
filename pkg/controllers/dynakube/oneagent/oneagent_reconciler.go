@@ -81,8 +81,10 @@ func (r *Reconciler) Reconcile(ctx context.Context, dynakube *dynatracev1beta1.D
 
 	err = r.reconcileRollout(ctx, dynakube)
 	if err != nil {
+		setCondition(dynakube, DaemonSetDeploymentErrorCondition(err))
 		return err
 	}
+	setCondition(dynakube, DaemonSetDeploymentCreatedCondition()) // TODO: not the best position for setting the condition
 
 	updInterval := defaultUpdateInterval
 	if val := os.Getenv(updateEnvVar); val != "" {

@@ -2,6 +2,7 @@ package dynakube
 
 import (
 	"context"
+	"k8s.io/apimachinery/pkg/api/meta"
 	"net/http"
 	"os"
 	"time"
@@ -420,7 +421,7 @@ func (controller *Controller) removeAppInjection(ctx context.Context, dynakube *
 }
 
 func (controller *Controller) reconcileOneAgent(ctx context.Context, dynakube *dynatracev1beta1.DynaKube) error {
-	if !dynakube.NeedsOneAgent() {
+	if !dynakube.NeedsOneAgent() && meta.FindStatusCondition(dynakube.Status.Conditions, oneagent.DaemonSetDeploymentConditionType) != nil {
 		return controller.removeOneAgentDaemonSet(ctx, dynakube)
 	}
 

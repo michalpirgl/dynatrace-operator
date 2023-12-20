@@ -59,18 +59,22 @@ func NewReconciler(clt client.Client, apiReader client.Reader, scheme *runtime.S
 func (r *Reconciler) Reconcile(ctx context.Context) error {
 	err := r.createActiveGateTenantConnectionInfoConfigMap(ctx)
 	if err != nil {
+		setCondition(r.dynakube, StatefulSetDeploymentErrorCondition(err))
 		return err
 	}
 
 	if r.dynakube.UseActiveGateAuthToken() {
 		err := r.authTokenReconciler.Reconcile(ctx)
 		if err != nil {
-			return errors.WithMessage(err, "could not reconcile Dynatrace ActiveGateAuthToken secrets")
+			err := errors.WithMessage(err, "could not reconcile Dynatrace ActiveGateAuthToken secrets")
+			setCondition(r.dynakube, StatefulSetDeploymentErrorCondition(err))
+			return err
 		}
 	}
 
 	err = r.proxyReconciler.Reconcile(ctx)
 	if err != nil {
+		setCondition(r.dynakube, StatefulSetDeploymentErrorCondition(err))
 		return err
 	}
 
@@ -79,14 +83,21 @@ func (r *Reconciler) Reconcile(ctx context.Context) error {
 	if r.dynakube.IsSyntheticMonitoringEnabled() {
 		for _, cap := range caps {
 			if cap.Enabled() && cap.ShortName() != capability.SyntheticName {
-				return errors.New("synthetic capability can't be enabled with other capabilities in the same DynaKube")
+				err := errors.New("synthetic capability can't be enabled with other capabilities in the same DynaKube")
+				setCondition(r.dynakube, StatefulSetDeploymentErrorCondition(err))
+				return err
 			}
 		}
 	}
 
 	for _, agCapability := range caps {
 		if agCapability.Enabled() {
-			return r.createCapability(ctx, agCapability)
+			err := r.createCapability(ctx, agCapability)
+			if err != nil {
+				setCondition(r.dynakube, StatefulSetDeploymentErrorCondition(err))
+				return err
+			}
+			setCondition(r.dynakube, StatefulSetDeploymentCreatedCondition())
 		} else {
 			err = r.deleteCapability(ctx, agCapability)
 			if err != nil {
