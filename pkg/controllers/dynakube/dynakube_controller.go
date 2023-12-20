@@ -421,7 +421,7 @@ func (controller *Controller) removeAppInjection(ctx context.Context, dynakube *
 }
 
 func (controller *Controller) reconcileOneAgent(ctx context.Context, dynakube *dynatracev1beta1.DynaKube) error {
-	if !dynakube.NeedsOneAgent() && meta.FindStatusCondition(dynakube.Status.Conditions, oneagent.DaemonSetDeploymentConditionType) != nil {
+	if !dynakube.NeedsOneAgent() && meta.FindStatusCondition(dynakube.Status.Conditions, oneagent.ConditionType) != nil {
 		return controller.removeOneAgentDaemonSet(ctx, dynakube)
 	}
 

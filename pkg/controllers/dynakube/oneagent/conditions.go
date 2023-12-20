@@ -7,7 +7,7 @@ import (
 )
 
 const (
-	DaemonSetDeploymentConditionType = "OneAgentDaemonSetDeployment"
+	ConditionType = "OneAgent"
 
 	DaemonSetCreatedReason = "DaemonSetCreated" // TODO: more specific reason could exist, like DaemonSetReady
 	UnexpectedErrorReason  = "UnexpectedError"  // TODO: more specific error reason could exist
@@ -15,7 +15,7 @@ const (
 
 func DaemonSetDeploymentCreatedCondition() metav1.Condition {
 	return metav1.Condition{
-		Type:   DaemonSetDeploymentConditionType,
+		Type:   ConditionType,
 		Status: metav1.ConditionTrue,
 		Reason: DaemonSetCreatedReason,
 	}
@@ -23,7 +23,7 @@ func DaemonSetDeploymentCreatedCondition() metav1.Condition {
 
 func DaemonSetDeploymentErrorCondition(err error) metav1.Condition {
 	return metav1.Condition{
-		Type:    DaemonSetDeploymentConditionType,
+		Type:    ConditionType,
 		Status:  metav1.ConditionFalse,
 		Reason:  UnexpectedErrorReason,
 		Message: err.Error(),

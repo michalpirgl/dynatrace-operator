@@ -7,7 +7,7 @@ import (
 )
 
 const (
-	StatefulSetDeploymentConditionType = "ActiveGateStatefulSetDeployment"
+	ConditionType = "ActiveGate"
 
 	StatefulSetCreatedReason = "StatefulSetCreated" // TODO: more specific reason could exist, like StatefulSetReady
 	UnexpectedErrorReason    = "UnexpectedError"    // TODO: more specific error reason could exist
@@ -15,7 +15,7 @@ const (
 
 func StatefulSetDeploymentCreatedCondition() metav1.Condition {
 	return metav1.Condition{
-		Type:   StatefulSetDeploymentConditionType,
+		Type:   ConditionType,
 		Status: metav1.ConditionTrue,
 		Reason: StatefulSetCreatedReason,
 	}
@@ -23,7 +23,7 @@ func StatefulSetDeploymentCreatedCondition() metav1.Condition {
 
 func StatefulSetDeploymentErrorCondition(err error) metav1.Condition {
 	return metav1.Condition{
-		Type:    StatefulSetDeploymentConditionType,
+		Type:    ConditionType,
 		Status:  metav1.ConditionFalse,
 		Reason:  UnexpectedErrorReason,
 		Message: err.Error(),
