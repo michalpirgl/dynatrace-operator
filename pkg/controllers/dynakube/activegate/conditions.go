@@ -9,8 +9,8 @@ import (
 const (
 	StatefulSetDeploymentConditionType = "ActiveGateStatefulSetDeployment"
 
-	StatefulSetCreatedReason = "DaemonsSetCreated" // TODO: more specific reason could exist, like StatefulSetReady
-	UnexpectedErrorReason    = "UnexpectedError"   // TODO: more specific error reason could exist
+	StatefulSetCreatedReason = "StatefulSetCreated" // TODO: more specific reason could exist, like StatefulSetReady
+	UnexpectedErrorReason    = "UnexpectedError"    // TODO: more specific error reason could exist
 )
 
 func StatefulSetDeploymentCreatedCondition() metav1.Condition {

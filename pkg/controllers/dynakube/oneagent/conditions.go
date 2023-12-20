@@ -9,8 +9,8 @@ import (
 const (
 	DaemonSetDeploymentConditionType = "OneAgentDaemonSetDeployment"
 
-	DaemonSetCreatedReason = "DaemonsSetCreated" // TODO: more specific reason could exist, like DaemonSetReady
-	UnexpectedErrorReason  = "UnexpectedError"   // TODO: more specific error reason could exist
+	DaemonSetCreatedReason = "DaemonSetCreated" // TODO: more specific reason could exist, like DaemonSetReady
+	UnexpectedErrorReason  = "UnexpectedError"  // TODO: more specific error reason could exist
 )
 
 func DaemonSetDeploymentCreatedCondition() metav1.Condition {
