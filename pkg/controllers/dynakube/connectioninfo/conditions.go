@@ -59,7 +59,7 @@ func setCondition(dynakube *dynatracev1beta1.DynaKube, newCondition metav1.Condi
 
 // TODO: maybe a general helper?
 func isConditionOutdated(timeProvider *timeprovider.Provider, condition *metav1.Condition, timeout time.Duration) bool {
-	if condition == nil {
+	if condition == nil && condition.Status == metav1.ConditionFalse { // If not set or failed previously, we need to update
 		return true
 	}
 	return timeProvider.IsOutdated(&condition.LastTransitionTime, timeout)
