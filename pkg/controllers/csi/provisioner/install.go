@@ -34,7 +34,7 @@ func (provisioner *OneAgentProvisioner) installAgentImage(dynakube dynatracev1be
 		PathResolver: provisioner.path,
 		Metadata:     provisioner.db,
 		ImageDigest:  imageDigest,
-	})
+	}, provisioner.client)
 	if err != nil {
 		return "", err
 	}

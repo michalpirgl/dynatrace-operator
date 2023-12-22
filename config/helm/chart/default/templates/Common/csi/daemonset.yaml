@@ -133,6 +133,10 @@ spec:
           - csi-provisioner
           - --health-probe-bind-address=:10090
         env:
+          - name: NODE_NAME
+            valueFrom:
+              fieldRef:
+                fieldPath: spec.nodeName
           - name: POD_NAMESPACE
             valueFrom:
               fieldRef:

@@ -13,5 +13,6 @@ RUN wget "${APIURL}/v1/deployment/installer/agent/unix/paas/version/${AGENTVERSI
 RUN [ "$(jq .sha256 -r checksum)" == "$(sha256sum agent.zip | awk '{ print $1 }')" ]
 RUN unzip /agent.zip -d /data
 
-FROM scratch
+FROM alpine
 COPY --from=builder /data /opt/dynatrace/oneagent
+

@@ -49,7 +49,7 @@ func GetDigest(uri string) (string, error) {
 	return strings.TrimLeft(refDigest.DigestStr(), digest.Canonical.String()+":"), nil
 }
 
-func NewImageInstaller(fs afero.Fs, props *Properties) (installer.Installer, error) {
+func NewImageInstaller(fs afero.Fs, props *Properties, client client.Client) (installer.Installer, error) {
 	// Create default transport
 	transport := http.DefaultTransport.(*http.Transport).Clone()
 
@@ -99,10 +99,12 @@ func NewImageInstaller(fs afero.Fs, props *Properties) (installer.Installer, err
 		props:     props,
 		transport: transport,
 		keychain:  keychain,
+		client:    client,
 	}, nil
 }
 
 type Installer struct {
+	client    client.Client
 	fs        afero.Fs
 	extractor zip.Extractor
 	props     *Properties
