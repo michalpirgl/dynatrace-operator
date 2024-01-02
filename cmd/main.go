@@ -31,7 +31,6 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/logger"
 	"github.com/pkg/errors"
 	"github.com/spf13/cobra"
-	ctrl "sigs.k8s.io/controller-runtime"
 )
 
 var (
@@ -97,9 +96,7 @@ func rootCommand(_ *cobra.Command, _ []string) error {
 }
 
 func main() {
-	ctrl.SetLogger(log)
 	cmd := newRootCommand()
-
 	cmd.AddCommand(
 		createWebhookCommandBuilder().Build(),
 		createOperatorCommandBuilder().Build(),
@@ -111,7 +108,7 @@ func main() {
 		createStartupProbe().Build(),
 		createCsiInitCommandBuilder().Build(),
 	)
-
+	log.V(1).Info("This is a DEBUG level log") // zap has an inverted way of handling log levels/verbosity, higher == more important (which goes against the meaning of verbosity...)
 	err := cmd.Execute()
 	if err != nil {
 		log.Info(err.Error())

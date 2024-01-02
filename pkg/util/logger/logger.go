@@ -18,12 +18,17 @@ func newLogger() logr.Logger {
 	config := zap.NewProductionEncoderConfig()
 	config.EncodeTime = zapcore.ISO8601TimeEncoder
 
-	return logr.New(
-		logSink{
-			infoLogger:  ctrlzap.New(ctrlzap.WriteTo(os.Stdout), ctrlzap.Encoder(zapcore.NewJSONEncoder(config))),
-			errorLogger: ctrlzap.New(ctrlzap.WriteTo(&errorPrettify{}), ctrlzap.Encoder(zapcore.NewJSONEncoder(config))),
-		},
-	)
+	level, err := zapcore.ParseLevel(os.Getenv("LOG_LEVEL")) // Quick and dirty way to make it configurable
+	if err != nil {
+		level = zapcore.InfoLevel
+	}
+
+	// Removed our weird logger-sink implementation here in favor of just a simple zap one for this POC
+	// Our weird logger is only useful to print out errors in a nicer way, but it totally breaks the log.V(123) functionality
+	// The reason for this is that the Enabled(level) method of the sink should actually consider the level, which it doesn't. (we would have to store it and all)
+	// It wouldn't be that hard, BUT zap handles verbosity/level in an inverted way, which we could/would actually just override here if wanted :D
+	// IMO, there must be a way to print the errors in a nice way, so we don't have to do a home-grown solution, and I would like to avoid coming up with a similarly home-grown solution for managing log verbosity/level
+	return ctrlzap.New(ctrlzap.Encoder(zapcore.NewJSONEncoder(config)), ctrlzap.Level(level))
 }
 
 func (dtl logSink) Init(logr.RuntimeInfo) {}
