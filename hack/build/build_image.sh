@@ -29,5 +29,7 @@ fi
 ${CONTAINER_CMD} build . -f ./Dockerfile -t "${out_image}" \
   --build-arg "GO_LINKER_ARGS=${go_linker_args}" \
   --build-arg "GO_BUILD_TAGS=${go_build_tags}" \
-  --label "quay.expires-after=14d"
+  --label "quay.expires-after=14d" \
+  --load
+
 rm -rf third_party_licenses
